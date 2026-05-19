@@ -1,0 +1,70 @@
+{
+  "schedule": {
+    "daily_report_utc_cron": "10 6 * * 1-5",
+    "weekly_report_utc_cron": "0 0 * * 1"
+  },
+  "scoring": {
+    "top_industries_count": 5,
+    "top_stocks_per_industry": 2,
+    "weights": {
+      "1m": {
+        "capital_flow": 0.35,
+        "news_sentiment": 0.30,
+        "relative_strength": 0.20,
+        "us_correlation": 0.15,
+        "fundamentals": 0.00
+      },
+      "3m": {
+        "capital_flow": 0.20,
+        "news_sentiment": 0.15,
+        "relative_strength": 0.30,
+        "us_correlation": 0.20,
+        "fundamentals": 0.15
+      },
+      "1y": {
+        "capital_flow": 0.10,
+        "news_sentiment": 0.05,
+        "relative_strength": 0.20,
+        "us_correlation": 0.15,
+        "fundamentals": 0.50
+      }
+    }
+  },
+  "stock_filter": {
+    "min_daily_volume_twd": 30000000,
+    "min_market_cap_by_period": {
+      "1m": 3000000000,
+      "3m": 5000000000,
+      "1y": 10000000000
+    },
+    "max_debt_ratio": 0.60,
+    "min_consecutive_profit_quarters": 2
+  },
+  "backtest": {
+    "window_weeks": 52,
+    "hold_days_by_period": {
+      "1m": 22,
+      "3m": 66,
+      "1y": 250
+    },
+    "min_win_rate_by_period": {
+      "1m": 0.55,
+      "3m": 0.55,
+      "1y": 0.60
+    },
+    "min_avg_return_by_period": {
+      "1m": 0.03,
+      "3m": 0.06,
+      "1y": 0.12
+    }
+  },
+  "news": {
+    "max_articles_per_feed": 5,
+    "sentiment_decay_days": 5,
+    "feeds": [
+      {"name": "鉅亨網", "url": "https://news.cnyes.com/rss/index"},
+      {"name": "經濟日報", "url": "https://money.udn.com/rssfeed/news/1001/5591/RSS.xml"},
+      {"name": "Yahoo財經", "url": "https://tw.finance.yahoo.com/rss/"}
+    ]
+  }
+}

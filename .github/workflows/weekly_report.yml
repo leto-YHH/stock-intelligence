@@ -1,0 +1,45 @@
+name: 每週選股推薦
+
+on:
+  schedule:
+    # UTC 00:00 週一 = 台灣時間 週一 08:00（台股開盤前）
+    - cron: "0 0 * * 1"
+  workflow_dispatch:
+    inputs:
+      period:
+        description: "持股週期 (1m / 3m / 1y)"
+        required: false
+        default: "3m"
+        type: choice
+        options:
+          - 1m
+          - 3m
+          - 1y
+
+jobs:
+  weekly-report:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - run: pip install -r requirements.txt
+
+      - name: 執行每週選股
+        env:
+          ANTHROPIC_API_KEY:    ${{ secrets.ANTHROPIC_API_KEY }}
+          GMAIL_USER:           ${{ secrets.GMAIL_USER }}
+          GMAIL_APP_PASS:       ${{ secrets.GMAIL_APP_PASS }}
+          REPORT_TO_EMAIL:      ${{ secrets.REPORT_TO_EMAIL }}
+          LINE_NOTIFY_TOKEN:    ${{ secrets.LINE_NOTIFY_TOKEN }}
+          TELEGRAM_BOT_TOKEN:   ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID:     ${{ secrets.TELEGRAM_CHAT_ID }}
+          FINMIND_TOKEN:        ${{ secrets.FINMIND_TOKEN }}
+          REPORT_PERIOD:        ${{ github.event.inputs.period || '3m' }}
+        run: python -m src.weekly_report.runner
