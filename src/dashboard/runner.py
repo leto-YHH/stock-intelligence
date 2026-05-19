@@ -65,7 +65,14 @@ def _summarize_news_with_claude(articles: list) -> dict:
             max_tokens=500,
             messages=[{"role": "user", "content": prompt}]
         )
-        return json.loads(resp.content[0].text)
+        text = resp.content[0].text
+        text = text.strip()
+        if text.startswith("```"):
+            text = text.split("```")[1]
+            if text.startswith("json"):
+                text = text[4:]
+        text = text.strip()
+        return json.loads(text)
     except Exception as e:
         log.warning(f"Claude 摘要失敗: {e}")
         return {"summary": "今日新聞摘要暫時無法產生。", "sentiment": "neutral", "score": 0}
