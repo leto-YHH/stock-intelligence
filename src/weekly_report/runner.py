@@ -14,10 +14,11 @@ from datetime import date
 from src.scorers.relative_strength import calc_relative_strength
 from src.scorers.news_sentiment    import calc_news_sentiment
 from src.scorers.us_correlation    import calc_us_correlation_scores
-from src.scorers.capital_flow      import calc_capital_flow_scores, _mock_records
+from src.scorers.capital_flow      import calc_capital_flow_scores
 from src.scorers.fundamentals      import calc_fundamental_scores, _mock_revenue
 from src.weekly_report.backtest    import screen_stocks, format_backtest_reasons
 from src.notifiers.email_notifier  import send_email
+from src.fetchers.finmind          import fetch_industry_institutional
 
 log = logging.getLogger(__name__)
 CONFIG_DIR = Path(__file__).parent.parent.parent / "config"
@@ -79,7 +80,6 @@ def score_industries(
 
 
 def build_html_report(period: str, ranked: list, stock_results: dict, ind_names: dict) -> str:
-    """組合 HTML 報告內容"""
     period_label = {"1m": "1 個月", "3m": "3 個月", "1y": "1 年"}[period]
     today = date.today().strftime("%Y-%m-%d")
 
@@ -116,7 +116,7 @@ def build_html_report(period: str, ranked: list, stock_results: dict, ind_names:
             </li>"""
         stock_sections += "</ul>"
 
-    html = f"""
+    return f"""
     <html><body style="font-family:Arial,sans-serif;max-width:800px;margin:auto;">
     <h2>📊 每週選股報告｜{today}｜目標週期：{period_label}</h2>
 
@@ -136,18 +136,17 @@ def build_html_report(period: str, ranked: list, stock_results: dict, ind_names:
     <small>本報告由 Stock Intelligence System 自動產生，僅供參考，不構成投資建議。</small>
     </body></html>
     """
-    return html
 
 
 def run(period: str = "3m"):
     log.info(f"=== 每週選股開始，週期：{period} ===")
     industries, settings = load_config()
-    weights  = settings["scoring"]["weights"]
-    top_n    = settings["scoring"]["top_industries_count"]
-    top_stk  = settings["scoring"]["top_stocks_per_industry"]
+    weights   = settings["scoring"]["weights"]
+    top_n     = settings["scoring"]["top_industries_count"]
+    top_stk   = settings["scoring"]["top_stocks_per_industry"]
     ind_names = {k: v["name"] for k, v in industries.items()}
 
-    # ── 模擬資料（之後換成真實 fetcher）────────────────────
+    # ── 模擬資料（相對強度、連動、新聞，之後換真實 fetcher）──
     np.random.seed(7)
     dates = pd.date_range("2024-08-01", periods=90, freq="B")
 
@@ -178,27 +177,7 @@ def run(period: str = "3m"):
         {"title": "電動車滲透率提升，零組件需求旺", "industries": ["EV"], "sentiment_score": 0.60},
     ]
 
-    industry_institutional = {
-        "SEMI": {
-            "2330": _mock_records(800,  120, streak_days=7),
-            "2454": _mock_records(200,   80, streak_days=3),
-        },
-        "TECH": {
-            "2382": _mock_records(150,   60, streak_days=4),
-            "3231": _mock_records(-50,   30),
-        },
-        "FIN":  {
-            "2882": _mock_records(-200, -50),
-            "2881": _mock_records(-100,  20),
-        },
-        "SHIP": {
-            "2603": _mock_records(-400, -80),
-            "2609": _mock_records(-300, -60),
-        },
-        "EV":   {"1536": _mock_records(100, 40, streak_days=2)},
-        "BIO":  {"1789": _mock_records(-50, 10)},
-    }
-
+    # ── 基本面：還是模擬（之後換真實月營收）──────────────────
     industry_revenues = {
         "SEMI": {
             "2330": _mock_revenue(200000, yoy_recent=65, yoy_prev=42),
@@ -208,7 +187,7 @@ def run(period: str = "3m"):
             "2382": _mock_revenue(80000,  yoy_recent=45, yoy_prev=20),
             "3231": _mock_revenue(60000,  yoy_recent=10, yoy_prev=15),
         },
-        "FIN":  {
+        "FIN": {
             "2882": _mock_revenue(30000,  yoy_recent=8,  yoy_prev=12),
             "2881": _mock_revenue(28000,  yoy_recent=5,  yoy_prev=8),
         },
@@ -219,6 +198,17 @@ def run(period: str = "3m"):
         "EV":   {"1536": _mock_revenue(15000, yoy_recent=25, yoy_prev=15)},
         "BIO":  {"1789": _mock_revenue(8000,  yoy_recent=5,  yoy_prev=10)},
     }
+
+    # ── 資金流向：真實 FinMind 資料 ───────────────────────────
+    log.info("抓取 FinMind 三大法人資料...")
+    all_stock_ids = {
+        code: [s["symbol"] for s in info["stocks"]]
+        for code, info in industries.items()
+    }
+    industry_institutional = fetch_industry_institutional(
+        stock_ids=all_stock_ids,
+        days=15,
+    )
 
     # ── 第一層：產業評分 ────────────────────────────────────
     ranked = score_industries(
@@ -244,11 +234,9 @@ def run(period: str = "3m"):
         code = ind["code"]
         ind_stocks = industries.get(code, {}).get("stocks", [])
 
-        # 模擬個股價格（之後換成真實資料）
         price_histories = {
             s["symbol"]: sim_stock(0.0005) for s in ind_stocks
         }
-
         candidates = [
             {"symbol": s["symbol"], "name": s["name"], "momentum_score": 70.0}
             for s in ind_stocks
@@ -258,7 +246,7 @@ def run(period: str = "3m"):
         stock_results[code] = passed
         log.info(f"  {ind_names.get(code, code)}：通過 {len(passed)} 檔")
 
-    # ── 輸出 Console ────────────────────────────────────────
+    # ── Console 輸出 ────────────────────────────────────────
     period_label = {"1m": "1 個月", "3m": "3 個月", "1y": "1 年"}[period]
     print(f"\n{'='*46}")
     print(f"  每週選股報告｜目標週期：{period_label}")
@@ -288,11 +276,12 @@ def run(period: str = "3m"):
 
     # ── 寄送 Email ──────────────────────────────────────────
     try:
+        recipients = settings.get("recipients", [os.environ["REPORT_TO_EMAIL"]])
         html = build_html_report(period, ranked, stock_results, ind_names)
         subject = f"📊 每週選股報告｜{date.today().strftime('%Y-%m-%d')}｜{period_label}"
-        send_email(subject, html)
-        log.info("Email 寄送成功")
-        print("\n  ✅ Email 已寄出")
+        for addr in recipients:
+            send_email(subject, html, to_addr=addr)
+            print(f"\n  ✅ Email 已寄出至 {addr}")
     except Exception as e:
         log.error(f"Email 寄送失敗: {e}")
         print(f"\n  ❌ Email 寄送失敗: {e}")
