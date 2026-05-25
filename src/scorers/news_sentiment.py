@@ -40,7 +40,7 @@ def _score_with_claude(articles: list) -> list:
 [{{"index": 1, "score": 0.8, "reason": "..."}}, ...]"""
 
         resp = client.messages.create(
-            model="claude-sonnet-4-20250514",
+            model="claude-sonnet-4-6",
             max_tokens=1000,
             messages=[{"role": "user", "content": prompt}]
         )
