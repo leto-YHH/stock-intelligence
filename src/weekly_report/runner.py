@@ -201,8 +201,7 @@ def build_html_report(period: str, ranked: list, stock_results: dict, ind_names:
     <h3>⭐ 推薦個股</h3>
     {stock_sections}
 
-    <hr>
-    <small>本報告由 Stock Intelligence System 自動產生，僅供參考，不構成投資建議。</small>
+    {explanation}
     </body></html>
     """
 
