@@ -44,6 +44,7 @@ def _score_with_claude(articles: list) -> list:
             max_tokens=1000,
             messages=[{"role": "user", "content": prompt}]
         )
+        print(f"[Claude] 回應內容: {resp.content}") 
         results = json.loads(resp.content[0].text)
 
         scored = []
