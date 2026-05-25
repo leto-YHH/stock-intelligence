@@ -85,16 +85,18 @@ def fetch_institutional_investors(
 
 
 def fetch_industry_institutional(
-    stock_ids: list[str],
-    days: int = 10,
-) -> dict[str, list]:
-    """
-    批次抓取多檔個股的三大法人資料
-    回傳 { stock_id: [records...] }
-    """
+    stock_ids: dict[str, list[str]],
+    days: int = 15,
+) -> dict[str, dict[str, list]]:
     start = (date.today() - timedelta(days=days + 10)).strftime("%Y-%m-%d")
     results = {}
-    for sid in stock_ids:
-        log.info(f"  FinMind 抓取 {sid} 籌碼資料")
-        results[sid] = fetch_institutional_investors(sid, start_date=start)
+
+    for industry_code, symbols in stock_ids.items():
+        results[industry_code] = {}
+        for sid in symbols:
+            log.info(f"  FinMind 抓取 [{industry_code}] {sid}")
+            results[industry_code][sid] = fetch_institutional_investors(
+                sid, start_date=start
+            )
+
     return results
