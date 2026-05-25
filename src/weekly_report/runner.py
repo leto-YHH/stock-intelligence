@@ -116,7 +116,93 @@ def build_html_report(period: str, ranked: list, stock_results: dict, ind_names:
             </li>"""
         stock_sections += "</ul>"
 
+    explanation = """
+    <hr>
+    <h3>📖 名詞說明</h3>
+
+    <h4>🔢 個股回測指標</h4>
+    <table border="1" cellpadding="6" cellspacing="0" style="border-collapse:collapse;width:100%">
+      <tr style="background:#f0f0f0">
+        <th>指標</th><th>意思</th><th>怎麼看</th>
+      </tr>
+      <tr>
+        <td><b>持有勝率</b></td>
+        <td>過去持有 N 天後，獲利的機率</td>
+        <td>越高越好，門檻為 55%（1年期 60%）</td>
+      </tr>
+      <tr>
+        <td><b>平均報酬</b></td>
+        <td>過去每次持有 N 天的平均獲利幅度</td>
+        <td>越高越好，1個月門檻 +3%，3個月 +6%，1年 +12%</td>
+      </tr>
+      <tr>
+        <td><b>中位數報酬</b></td>
+        <td>排除極端值後的「典型」獲利幅度</td>
+        <td>接近平均報酬代表結果穩定，差異大代表偶爾有極端值</td>
+      </tr>
+      <tr>
+        <td><b>報酬穩定度</b></td>
+        <td>每次持有的報酬是否集中、不飄移</td>
+        <td>越高越穩定；低於 20% 代表結果波動大，風險較高</td>
+      </tr>
+    </table>
+
+    <h4>🏭 產業評分維度（各 0–100 分）</h4>
+    <table border="1" cellpadding="6" cellspacing="0" style="border-collapse:collapse;width:100%">
+      <tr style="background:#f0f0f0">
+        <th>維度</th><th>意思</th><th>1個月權重</th><th>3個月權重</th><th>1年權重</th>
+      </tr>
+      <tr>
+        <td><b>資金（外資/投信）</b></td>
+        <td>外資與投信近期買超張數，代表法人對該產業的信心</td>
+        <td>35%</td><td>20%</td><td>10%</td>
+      </tr>
+      <tr>
+        <td><b>情緒（新聞）</b></td>
+        <td>AI 分析近期財經新聞的正負面情緒</td>
+        <td>30%</td><td>15%</td><td>5%</td>
+      </tr>
+      <tr>
+        <td><b>強度（相對強度）</b></td>
+        <td>該產業股價相對大盤的強弱，強者恆強</td>
+        <td>20%</td><td>30%</td><td>20%</td>
+      </tr>
+      <tr>
+        <td><b>連動（美國指數）</b></td>
+        <td>對應美國連動指數（費城半導體、BDI 等）的超額報酬</td>
+        <td>15%</td><td>20%</td><td>15%</td>
+      </tr>
+      <tr>
+        <td><b>基本面（月營收）</b></td>
+        <td>近期月營收年增率是否加速成長</td>
+        <td>0%</td><td>15%</td><td>50%</td>
+      </tr>
+    </table>
+
+    <p style="color:#888;font-size:12px;">
+    ⚠️ 本報告由 Stock Intelligence System 自動產生，所有數據來自歷史回測，不代表未來表現，僅供參考，不構成投資建議。投資人須自行承擔投資風險。
+    </p>
+    """
+
     return f"""
+    <html><body style="font-family:Arial,sans-serif;max-width:800px;margin:auto;">
+    <h2>📊 每週選股報告｜{today}｜目標週期：{period_label}</h2>
+
+    <h3>🏆 產業排名</h3>
+    <table border="1" cellpadding="6" cellspacing="0" style="border-collapse:collapse;width:100%">
+      <tr style="background:#f0f0f0">
+        <th>排名</th><th>產業</th><th>綜合分</th>
+        <th>資金</th><th>情緒</th><th>強度</th><th>連動</th><th>基本面</th>
+      </tr>
+      {rows}
+    </table>
+
+    <h3>⭐ 推薦個股</h3>
+    {stock_sections}
+
+    {explanation}
+    </body></html>
+    """
     <html><body style="font-family:Arial,sans-serif;max-width:800px;margin:auto;">
     <h2>📊 每週選股報告｜{today}｜目標週期：{period_label}</h2>
 
