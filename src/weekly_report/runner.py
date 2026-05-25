@@ -286,24 +286,27 @@ def run(period: str = "3m"):
     top_industries = ranked[:top_n]
 
     # ── 第二、三層：個股篩選 + 回測 ────────────────────────
-    np.random.seed(42)
-    stock_dates = pd.date_range("2022-01-01", periods=600, freq="B")
-
-    def sim_stock(trend, vol=0.012, start=100.0):
-        r = np.random.randn(600) * vol + trend
-        return pd.Series(start * (1 + r).cumprod(), index=stock_dates)
+    from src.fetchers.tw_stock import fetch_tw_history
 
     stock_results = {}
     for ind in top_industries:
         code = ind["code"]
         ind_stocks = industries.get(code, {}).get("stocks", [])
 
-        price_histories = {
-            s["symbol"]: sim_stock(0.0005) for s in ind_stocks
-        }
+        price_histories = {}
+        for s in ind_stocks:
+            print(f"[yfinance] 抓取 {s['symbol']} {s['name']} 歷史價格")
+            hist = fetch_tw_history(s["symbol"], days=365)
+            if hist is not None:
+                price_histories[s["symbol"]] = hist
+                print(f"[yfinance] {s['symbol']} 取得 {len(hist)} 筆")
+            else:
+                print(f"[yfinance] {s['symbol']} 失敗，略過")
+
         candidates = [
             {"symbol": s["symbol"], "name": s["name"], "momentum_score": 70.0}
             for s in ind_stocks
+            if s["symbol"] in price_histories
         ]
 
         passed = screen_stocks(candidates, price_histories, period, top_n=top_stk)
