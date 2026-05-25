@@ -185,24 +185,7 @@ def build_html_report(period: str, ranked: list, stock_results: dict, ind_names:
     """
 
     return f"""
-    <html><body style="font-family:Arial,sans-serif;max-width:800px;margin:auto;">
-    <h2>📊 每週選股報告｜{today}｜目標週期：{period_label}</h2>
-
-    <h3>🏆 產業排名</h3>
-    <table border="1" cellpadding="6" cellspacing="0" style="border-collapse:collapse;width:100%">
-      <tr style="background:#f0f0f0">
-        <th>排名</th><th>產業</th><th>綜合分</th>
-        <th>資金</th><th>情緒</th><th>強度</th><th>連動</th><th>基本面</th>
-      </tr>
-      {rows}
-    </table>
-
-    <h3>⭐ 推薦個股</h3>
-    {stock_sections}
-
-    {explanation}
-    </body></html>
-    """
+    
     <html><body style="font-family:Arial,sans-serif;max-width:800px;margin:auto;">
     <h2>📊 每週選股報告｜{today}｜目標週期：{period_label}</h2>
 
