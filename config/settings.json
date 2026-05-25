@@ -66,5 +66,9 @@
       {"name": "經濟日報", "url": "https://money.udn.com/rssfeed/news/1001/5591/RSS.xml"},
       {"name": "Yahoo財經", "url": "https://tw.finance.yahoo.com/rss/"}
     ]
-  }
+  },
+  "recipients": [
+    "zoxzore@gmail.com",
+    "ss0978718950@gmail.com"
+  ]
 }
