@@ -134,9 +134,13 @@ def calc_capital_flow_scores(
     values = np.array(list(industry_raw.values()))
     v_min, v_max = values.min(), values.max()
 
+    print(f"[CapFlow] 各產業原始分數: {industry_raw}")
+    print(f"[CapFlow] min={v_min:.1f}, max={v_max:.1f}")
+  
     if v_max == v_min:
+        print("[CapFlow] 所有產業分數相同，全部回傳 50")
         return {code: 50.0 for code in industry_raw}
-
+      
     return {
         code: round((v - v_min) / (v_max - v_min) * 100, 1)
         for code, v in industry_raw.items()
