@@ -2,7 +2,7 @@
 每週選股主流程
 五個維度全部整合版
 """
-
+from src.fetchers.news import fetch_finance_news
 import os
 import json
 import logging
@@ -237,13 +237,9 @@ def run(period: str = "3m"):
         "BIO":  {"name": "那斯達克生技","pct": 0.2},
     }
 
-    news_articles = [
-        {"title": "台積電 AI 晶片需求強勁", "industries": ["SEMI"], "sentiment_score": 0.85},
-        {"title": "廣達 AI 伺服器出貨創新高", "industries": ["TECH"], "sentiment_score": 0.80},
-        {"title": "Fed 降息預期升溫，金融股走強", "industries": ["FIN"], "sentiment_score": 0.65},
-        {"title": "BDI 指數四連跌，航運承壓", "industries": ["SHIP"], "sentiment_score": -0.55},
-        {"title": "電動車滲透率提升，零組件需求旺", "industries": ["EV"], "sentiment_score": 0.60},
-    ]
+    log.info("抓取真實財經新聞...")
+    news_articles = fetch_finance_news()
+    print(f"[News] 抓取到 {len(news_articles)} 則新聞")
 
     # ── 基本面：還是模擬（之後換真實月營收）──────────────────
     industry_revenues = {
