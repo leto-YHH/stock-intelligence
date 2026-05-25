@@ -50,11 +50,11 @@ def fetch_institutional_investors(
                 entry = {"date": row["date"], "stock_id": stock_id,
                          "foreign_net": 0, "investment_net": 0, "dealer_net": 0}
                 results.append(entry)
-            if "外資" in name:
+            if "Foreign_Investor" in name:
                 entry["foreign_net"] += net
-            elif "投信" in name:
+            elif "Investment_Trust" in name:
                 entry["investment_net"] += net
-            elif "自營" in name:
+            elif "Dealer" in name:
                 entry["dealer_net"] += net
         return sorted(results, key=lambda x: x["date"])
     except Exception as e:
