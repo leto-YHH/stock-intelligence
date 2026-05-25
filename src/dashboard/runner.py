@@ -254,8 +254,11 @@ def run():
     if os.getenv("GMAIL_USER"):
         try:
             from src.notifiers.email_notifier import send_email
-            send_email(subject, html)
-            log.info("✅ Email 發送成功")
+            settings = _load_settings()
+            recipients = settings.get("recipients", [os.environ["REPORT_TO_EMAIL"]])
+            for addr in recipients:
+                send_email(subject, html, to_addr=addr)
+                log.info(f"✅ Email 發送成功至 {addr}")
         except Exception as e:
             log.error(f"❌ Email 失敗: {e}")
             errors.append(str(e))
