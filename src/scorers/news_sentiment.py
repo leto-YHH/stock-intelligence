@@ -45,7 +45,12 @@ def _score_with_claude(articles: list) -> list:
             messages=[{"role": "user", "content": prompt}]
         )
         print(f"[Claude] 回應內容: {resp.content}") 
-        results = json.loads(resp.content[0].text)
+        text = resp.content[0].text.strip()
+        if text.startswith("```"):
+            text = text.split("```")[1]
+            if text.startswith("json"):
+                text = text[4:]
+        results = json.loads(text.strip())
 
         scored = []
         for item in results:
