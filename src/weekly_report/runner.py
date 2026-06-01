@@ -378,3 +378,8 @@ def run(period: str = "3m"):
 
     log.info("=== 每週選股完成 ===")
     return top_industries, stock_results
+
+if __name__ == "__main__":
+    logging.basicConfig(level=logging.WARNING, format="%(message)s")
+    period = os.getenv("REPORT_PERIOD", "3m")
+    run(period)
