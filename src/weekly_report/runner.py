@@ -17,11 +17,10 @@ from src.scorers.relative_strength import calc_relative_strength
 from src.scorers.news_sentiment    import calc_news_sentiment
 from src.scorers.us_correlation    import calc_us_correlation_scores
 from src.scorers.capital_flow      import calc_capital_flow_scores
-from src.scorers.fundamentals      import calc_fundamental_scores, _mock_revenue
 from src.weekly_report.backtest    import screen_stocks, format_backtest_reasons
 from src.notifiers.email_notifier  import send_email
 from src.fetchers.finmind          import fetch_industry_institutional
-
+from src.scorers.fundamentals      import calc_fundamental_scores
 log = logging.getLogger(__name__)
 CONFIG_DIR = Path(__file__).parent.parent.parent / "config"
 
@@ -249,29 +248,9 @@ def run(period: str = "3m"):
     news_articles = fetch_finance_news()
     print(f"[News] 抓取到 {len(news_articles)} 則新聞")
 
-    # ── 基本面：還是模擬（之後換真實月營收）──────────────────
-    industry_revenues = {
-        "SEMI": {
-            "2330": _mock_revenue(200000, yoy_recent=65, yoy_prev=42),
-            "2454": _mock_revenue(50000,  yoy_recent=30, yoy_prev=18),
-        },
-        "TECH": {
-            "2382": _mock_revenue(80000,  yoy_recent=45, yoy_prev=20),
-            "3231": _mock_revenue(60000,  yoy_recent=10, yoy_prev=15),
-        },
-        "FIN": {
-            "2882": _mock_revenue(30000,  yoy_recent=8,  yoy_prev=12),
-            "2881": _mock_revenue(28000,  yoy_recent=5,  yoy_prev=8),
-        },
-        "SHIP": {
-            "2603": _mock_revenue(90000,  yoy_recent=-15, yoy_prev=5),
-            "2609": _mock_revenue(60000,  yoy_recent=-20, yoy_prev=-5),
-        },
-        "EV":   {"1536": _mock_revenue(15000, yoy_recent=25, yoy_prev=15)},
-        "BIO":  {"1789": _mock_revenue(8000,  yoy_recent=5,  yoy_prev=10)},
-    }
+    # ── 資金流向 + 月營收：真實 FinMind 資料 ─────────────────
+    from src.fetchers.finmind import fetch_industry_revenues
 
-    # ── 資金流向：真實 FinMind 資料 ───────────────────────────
     log.info("抓取 FinMind 三大法人資料...")
     all_stock_ids = {
         code: [s["symbol"] for s in info["stocks"]]
@@ -282,6 +261,9 @@ def run(period: str = "3m"):
         days=15,
     )
 
+    log.info("抓取月營收資料...")
+    industry_revenues = fetch_industry_revenues(all_stock_ids, months=18)
+    
     # ── 第一層：產業評分 ────────────────────────────────────
     ranked = score_industries(
         industry_histories, benchmark_history,
