@@ -76,3 +76,54 @@ def fetch_industry_institutional(
                 sid, start_date=start
             )
     return results
+
+
+def fetch_monthly_revenue(
+    stock_id: str,
+    months: int = 18,
+) -> list[dict]:
+    """
+    抓取單一個股的月營收資料
+    回傳：[{'year': 2024, 'month': 1, 'revenue': 200000}, ...]
+    """
+    from datetime import date, timedelta
+    start = (date.today() - timedelta(days=months * 31)).strftime("%Y-%m-%d")
+
+    params = {
+        "dataset":    "TaiwanStockMonthRevenue",
+        "data_id":    stock_id,
+        "start_date": start,
+        "token":      _get_token(),
+    }
+    try:
+        r = requests.get(BASE_URL, params=params, timeout=15)
+        r.raise_for_status()
+        raw = r.json().get("data", [])
+        results = []
+        for row in raw:
+            results.append({
+                "year":    int(row.get("year",  0)),
+                "month":   int(row.get("month", 0)),
+                "revenue": int(row.get("revenue", 0)),
+            })
+        return sorted(results, key=lambda x: (x["year"], x["month"]))
+    except Exception as e:
+        log.warning(f"FinMind {stock_id} 月營收失敗: {e}")
+        return []
+
+
+def fetch_industry_revenues(
+    stock_ids: dict[str, list[str]],
+    months: int = 18,
+) -> dict[str, dict[str, list]]:
+    """
+    批次抓取多產業月營收
+    回傳 { 'SEMI': { '2330': [records...], ... }, ... }
+    """
+    results = {}
+    for industry_code, symbols in stock_ids.items():
+        results[industry_code] = {}
+        for sid in symbols:
+            log.info(f"  FinMind 抓取 [{industry_code}] {sid} 月營收")
+            results[industry_code][sid] = fetch_monthly_revenue(sid, months=months)
+    return results
