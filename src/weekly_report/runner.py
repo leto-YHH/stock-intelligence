@@ -2,6 +2,8 @@
 每週選股主流程
 五個維度全部整合版
 """
+from src.fetchers.us_stock import fetch_us_correlations
+import yfinance as yf
 from src.fetchers.news import fetch_finance_news
 import os
 import json
@@ -228,14 +230,12 @@ def run(period: str = "3m"):
     }
     benchmark_history = sim(0.04)
 
-    correlation_quotes = {
-        "SEMI": {"name": "費城半導體", "pct": 2.8},
-        "TECH": {"name": "Nasdaq 100", "pct": 1.5},
-        "FIN":  {"name": "KBW 銀行",   "pct": -0.3},
-        "SHIP": {"name": "BDI ETF",    "pct": -0.8},
-        "EV":   {"name": "電動車 ETF", "pct": 0.9},
-        "BIO":  {"name": "那斯達克生技","pct": 0.2},
-    }
+    log.info("抓取美國連動指數...")
+    correlation_quotes = fetch_us_correlations()
+    sp500 = yf.Ticker("^GSPC").fast_info
+    sp500_prev = sp500.previous_close or 1
+    sp500_pct = ((sp500.last_price - sp500_prev) / sp500_prev * 100) if sp500_prev else 0
+    print(f"[US] S&P 500 今日漲跌: {sp500_pct:+.2f}%")
 
     log.info("抓取真實財經新聞...")
     news_articles = fetch_finance_news()
@@ -277,7 +277,7 @@ def run(period: str = "3m"):
     # ── 第一層：產業評分 ────────────────────────────────────
     ranked = score_industries(
         industry_histories, benchmark_history,
-        correlation_quotes, 0.7,
+        correlation_quotes, sp500_pct,
         news_articles,
         industry_institutional,
         industry_revenues,
