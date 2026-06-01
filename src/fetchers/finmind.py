@@ -86,7 +86,6 @@ def fetch_monthly_revenue(
     抓取單一個股的月營收資料
     回傳：[{'year': 2024, 'month': 1, 'revenue': 200000}, ...]
     """
-    from datetime import date, timedelta
     start = (date.today() - timedelta(days=months * 31)).strftime("%Y-%m-%d")
 
     params = {
@@ -99,6 +98,9 @@ def fetch_monthly_revenue(
         r = requests.get(BASE_URL, params=params, timeout=15)
         r.raise_for_status()
         raw = r.json().get("data", [])
+        print(f"[FinMind Revenue] {stock_id} 回傳筆數: {len(raw)}")
+        if raw:
+            print(f"[FinMind Revenue] 欄位範例: {raw[0]}")
         results = []
         for row in raw:
             results.append({
