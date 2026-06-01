@@ -1,20 +1,36 @@
 """
-LINE Notify 通知器
-需要環境變數：LINE_NOTIFY_TOKEN
-申請：https://notify-bot.line.me/
+LINE Messaging API 通知器
+需要環境變數：
+  LINE_CHANNEL_TOKEN  → Channel access token
+  LINE_USER_ID        → 接收訊息的使用者 ID
 """
-
 import os
 import requests
 
-
 def send_line(message: str):
-    token = os.environ["LINE_NOTIFY_TOKEN"]
-    if len(message) > 1000:
-        message = message[:997] + "..."
-    requests.post(
-        "https://notify-api.line.me/api/notify",
-        headers={"Authorization": f"Bearer {token}"},
-        data={"message": "\n" + message},
+    token   = os.environ["LINE_CHANNEL_TOKEN"]
+    user_id = os.environ["LINE_USER_ID"]
+
+    if len(message) > 5000:
+        message = message[:4997] + "..."
+
+    payload = {
+        "to": user_id,
+        "messages": [
+            {
+                "type": "text",
+                "text": message
+            }
+        ]
+    }
+
+    r = requests.post(
+        "https://api.line.me/v2/bot/message/push",
+        headers={
+            "Authorization": f"Bearer {token}",
+            "Content-Type": "application/json",
+        },
+        json=payload,
         timeout=10,
-    ).raise_for_status()
+    )
+    r.raise_for_status()
