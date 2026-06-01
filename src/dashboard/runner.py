@@ -263,7 +263,7 @@ def run():
             log.error(f"❌ Email 失敗: {e}")
             errors.append(str(e))
 
-    if os.getenv("LINE_NOTIFY_TOKEN"):
+    if os.getenv("LINE_CHANNEL_TOKEN"):
         try:
             from src.notifiers.line_notifier import send_line
             send_line(text)
