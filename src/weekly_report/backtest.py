@@ -126,9 +126,10 @@ def screen_stocks(
         if bt is None:
             log.info(f"  {symbol} {name}: 歷史資料不足，跳過")
             continue
-
+          
+        print(f"[BT] {symbol} {name}: 勝率={bt['win_rate']:.1%} 均報={bt['avg_return']:+.1%} 門檻={min_win:.0%}/{min_ret:.0%}")
         passed = bt["win_rate"] >= min_win and bt["avg_return"] >= min_ret
-
+      
         log.info(
             f"  {symbol} {name}: "
             f"勝率={bt['win_rate']:.1%} "
