@@ -217,18 +217,26 @@ def run(period: str = "3m"):
     ind_names = {k: v["name"] for k, v in industries.items()}
 
     # ── 模擬資料（相對強度、連動、新聞，之後換真實 fetcher）──
-    np.random.seed(7)
-    dates = pd.date_range("2024-08-01", periods=90, freq="B")
+    from src.fetchers.tw_stock import fetch_tw_history
+    from src.scorers.relative_strength import build_industry_history
 
-    def sim(trend, noise=1.0):
-        r = np.random.randn(90) * noise + trend
-        return pd.Series((1 + r/100).cumprod() * 1000, index=dates)
+    log.info("抓取台股產業歷史價格...")
+    industry_histories = {}
+    for code, info in industries.items():
+        stock_hists = {}
+        for s in info["stocks"]:
+            hist = fetch_tw_history(s["symbol"], days=90)
+            if hist is not None:
+                stock_hists[s["symbol"]] = hist
+        if stock_hists:
+            industry_histories[code] = build_industry_history(stock_hists)
+            print(f"[RS] {info['name']} 取得 {len(stock_hists)} 檔個股歷史")
 
-    industry_histories = {
-        "SEMI": sim(0.12), "TECH": sim(0.09), "FIN": sim(0.01),
-        "SHIP": sim(-0.03), "EV": sim(0.06), "BIO": sim(-0.01),
-    }
-    benchmark_history = sim(0.04)
+    benchmark_history = fetch_tw_history("^TWII", days=90)
+    if benchmark_history is None:
+        import yfinance as yf
+        benchmark_history = yf.Ticker("^TWII").history(period="90d")["Close"]
+    print(f"[RS] 大盤歷史取得 {len(benchmark_history)} 筆")
 
     log.info("抓取美國連動指數...")
     correlation_quotes = fetch_us_correlations()
@@ -286,8 +294,6 @@ def run(period: str = "3m"):
     top_industries = ranked[:top_n]
 
     # ── 第二、三層：個股篩選 + 回測 ────────────────────────
-    from src.fetchers.tw_stock import fetch_tw_history
-
     stock_results = {}
     for ind in top_industries:
         code = ind["code"]
