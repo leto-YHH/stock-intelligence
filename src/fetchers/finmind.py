@@ -104,8 +104,8 @@ def fetch_monthly_revenue(
         results = []
         for row in raw:
             results.append({
-                "year":    int(row.get("year",  0)),
-                "month":   int(row.get("month", 0)),
+                "year":    int(row.get("revenue_year",  0)),
+                "month":   int(row.get("revenue_month", 0)),
                 "revenue": int(row.get("revenue", 0)),
             })
         return sorted(results, key=lambda x: (x["year"], x["month"]))
