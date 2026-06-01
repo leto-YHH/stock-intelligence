@@ -57,13 +57,13 @@ def rolling_backtest(
     series   = price_series.iloc[-max_days:] if len(price_series) > max_days else price_series
 
     returns = []
-    # 每個可能的進場點都算一次持有 hold_days 後的報酬
     for i in range(len(series) - hold_days):
         entry  = series.iloc[i]
         exit_  = series.iloc[i + hold_days]
-        if entry > 0:
+        if entry > 0 and not np.isnan(entry) and not np.isnan(exit_):
             ret = (exit_ - entry) / entry
-            returns.append(ret)
+            if not np.isnan(ret):
+                returns.append(ret)
 
     if len(returns) < 10:  # 樣本太少，不可信
         return None
