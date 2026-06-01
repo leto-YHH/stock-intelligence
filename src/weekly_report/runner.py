@@ -341,7 +341,7 @@ def run(period: str = "3m"):
             bt = s["backtest"]
             print(f"     ✅ {s['name']}（{s['symbol']}）勝率={bt['win_rate']:.0%} 均報={bt['avg_return']:+.1%}")
 
-# ── 寄送 Email ──────────────────────────────────────────
+    # ── 寄送 Email ──────────────────────────────────────────
     try:
         recipients = settings.get("recipients", [os.environ["REPORT_TO_EMAIL"]])
         html = build_html_report(period, ranked, stock_results, ind_names)
