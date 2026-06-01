@@ -341,7 +341,7 @@ def run(period: str = "3m"):
             bt = s["backtest"]
             print(f"     ✅ {s['name']}（{s['symbol']}）勝率={bt['win_rate']:.0%} 均報={bt['avg_return']:+.1%}")
 
-    # ── 寄送 Email ──────────────────────────────────────────
+# ── 寄送 Email ──────────────────────────────────────────
     try:
         recipients = settings.get("recipients", [os.environ["REPORT_TO_EMAIL"]])
         html = build_html_report(period, ranked, stock_results, ind_names)
@@ -353,11 +353,28 @@ def run(period: str = "3m"):
         log.error(f"Email 寄送失敗: {e}")
         print(f"\n  ❌ Email 寄送失敗: {e}")
 
+    # ── 寄送 LINE ────────────────────────────────────────────
+    if os.getenv("LINE_CHANNEL_TOKEN"):
+        try:
+            from src.notifiers.line_notifier import send_line
+            lines = [f"📊 每週選股報告｜{date.today().strftime('%Y-%m-%d')}｜{period_label}", ""]
+            for i, ind in enumerate(top_industries, 1):
+                code = ind["code"]
+                lines.append(f"{i}. {ind_names.get(code, code)}　{ind['score']}分")
+            lines.append("")
+            lines.append("⭐ 推薦個股")
+            for code, stocks in stock_results.items():
+                if not stocks:
+                    continue
+                lines.append(f"\n📌 {ind_names.get(code, code)}")
+                for s in stocks:
+                    bt = s["backtest"]
+                    lines.append(f"  {s['name']}（{s['symbol']}）勝率={bt['win_rate']:.0%} 均報={bt['avg_return']:+.1%}")
+            send_line("\n".join(lines))
+            print("\n  ✅ LINE 已發送")
+        except Exception as e:
+            log.error(f"LINE 發送失敗: {e}")
+            print(f"\n  ❌ LINE 發送失敗: {e}")
+
     log.info("=== 每週選股完成 ===")
     return top_industries, stock_results
-
-
-if __name__ == "__main__":
-    logging.basicConfig(level=logging.WARNING, format="%(message)s")
-    period = os.getenv("REPORT_PERIOD", "3m")
-    run(period)
