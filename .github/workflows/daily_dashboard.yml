@@ -34,4 +34,16 @@ jobs:
           LINE_USER_ID:         ${{ secrets.LINE_USER_ID }}
           LINE_CHANNEL_TOKEN:   ${{ secrets.LINE_CHANNEL_TOKEN }}
         run: python -m src.dashboard.runner
-
+      - name: 推送 JSON 到前端 repo
+        env:
+          FRONTEND_DEPLOY_TOKEN: ${{ secrets.FRONTEND_DEPLOY_TOKEN }}
+        run: |
+          git clone https://x-access-token:${FRONTEND_DEPLOY_TOKEN}@github.com/leto-YHH/stock-intelligence-web.git frontend_repo
+          mkdir -p frontend_repo/public/data
+          cp public_data/dashboard.json frontend_repo/public/data/dashboard.json
+          cd frontend_repo
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add public/data/dashboard.json
+          git diff --staged --quiet || git commit -m "chore: 更新 dashboard.json $(date +'%Y-%m-%d')"
+          git push

@@ -281,9 +281,57 @@ def run():
             log.error(f"❌ Telegram 失敗: {e}")
             errors.append(str(e))
 
+    # ── 匯出 JSON 給前端 ──────────────────────────────────
+    try:
+        from src.exporters.json_exporter import export_dashboard
+
+        # 整理六大指數
+        taiex = market["taiex"]
+        indices_json = [
+            {
+                "label": "台股加權",
+                "value": f"{taiex['price']:,.0f}",
+                "chg": f"{'▲' if (taiex['pct'] or 0) >= 0 else '▼'} {abs(taiex['change'] or 0):,.0f} pts　{(taiex['pct'] or 0):+.2f}%",
+                "vol": "見台股官網",
+                "dir": "down" if (taiex['pct'] or 0) >= 0 else "up",
+            }
+        ]
+        for q in market["us_indices"]:
+            indices_json.append({
+                "label": q["name"],
+                "value": f"{q['price']:,.0f}",
+                "chg": f"{'▲' if (q['pct'] or 0) >= 0 else '▼'} {abs(q['change'] or 0):,.0f} pts　{(q['pct'] or 0):+.2f}%",
+                "vol": "",
+                "dir": "down" if (q['pct'] or 0) >= 0 else "up",
+            })
+
+        # 整理新聞
+        news_json = [
+            {"title": n["title"], "summary": n.get("summary", ""), "source": n.get("source", ""), "url": n.get("url", "#")}
+            for n in news[:8]
+        ]
+
+        # 情緒標籤
+        sent = ai_summary.get("sentiment", "neutral")
+        score = ai_summary.get("score", 0)
+        sent_label = {"positive": "偏多", "neutral": "中性", "negative": "偏空"}.get(sent, "中性")
+        arrow = "▲" if score >= 0 else "▼"
+        sentiment_str = f"{arrow} {sent_label}　{score:+d}"
+
+        export_dashboard(
+            indices=indices_json,
+            news=news_json,
+            impacts=[],
+            sentiment=sentiment_str,
+            summary=ai_summary.get("summary", ""),
+            daily_summary=ai_summary.get("summary", ""),
+        )
+        log.info("✅ dashboard.json 匯出成功")
+    except Exception as e:
+        log.error(f"❌ JSON 匯出失敗: {e}")
+
     log.info("=== 每日 Dashboard 完成 ===")
     return {"html": html, "text": text, "errors": errors}
-
 
 if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(message)s")
