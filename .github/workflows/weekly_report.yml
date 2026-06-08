@@ -45,7 +45,7 @@ jobs:
           REPORT_PERIOD:        ${{ github.event.inputs.period || '3m' }}
         run: python -m src.weekly_report.runner
 
-        - name: 推送 weekly.json 到前端 repo
+      - name: 推送 weekly.json 到前端 repo
         env:
           FRONTEND_DEPLOY_TOKEN: ${{ secrets.FRONTEND_DEPLOY_TOKEN }}
         run: |
