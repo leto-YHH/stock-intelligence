@@ -363,6 +363,57 @@ def run(period: str = "3m"):
         except Exception as e:
             log.error(f"LINE 發送失敗: {e}")
             print(f"\n  ❌ LINE 發送失敗: {e}")
+    # ── 匯出 weekly.json ────────────────────────────────────
+    try:
+        from src.exporters.json_exporter import export_weekly
+        import yfinance as yf
+
+        def build_weekly_period(period_key, ranked, stock_results, ind_names, industries):
+            result = []
+            for i, ind in enumerate(ranked[:5], 1):
+                code = ind["code"]
+                bd = ind["breakdown"]
+                stocks_out = []
+                for s in stock_results.get(code, []):
+                    symbol = s["symbol"]
+                    # 抓現價
+                    try:
+                        price = round(yf.Ticker(symbol).fast_info.last_price, 2)
+                    except:
+                        price = 0
+                    bt = s["backtest"]
+                    stocks_out.append({
+                        "code": symbol,
+                        "name": s["name"],
+                        "price": price,
+                        "winRate": f"{bt['win_rate']:.0%}",
+                        "avgReturn": f"{bt['avg_return']:+.1%}",
+                        "samples": bt["sample_count"],
+                        "tags": [],
+                        "logic": f"勝率 {bt['win_rate']:.0%}，平均報酬 {bt['avg_return']:+.1%}，穩定度 {bt['stability']:.0%}",
+                    })
+                result.append({
+                    "rank": i,
+                    "ind": ind_names.get(code, code),
+                    "score": round(ind["score"]),
+                    "scores": {
+                        "capital":   round(bd["capital_flow"]),
+                        "sentiment": round(bd["news_sentiment"]),
+                        "rs":        round(bd["relative_strength"]),
+                        "us":        round(bd["us_correlation"]),
+                        "fund":      round(bd["fundamentals"]),
+                    },
+                    "stocks": stocks_out,
+                })
+            return result
+
+        weekly_data = {
+            period: build_weekly_period(period, top_industries, stock_results, ind_names, industries)
+        }
+        export_weekly(weekly_data)
+        print("\n  ✅ weekly.json 已匯出")
+    except Exception as e:
+        print(f"\n  ❌ weekly.json 匯出失敗: {e}")
 
     log.info("=== 每週選股完成 ===")
     return top_industries, stock_results
