@@ -363,20 +363,35 @@ def run(period: str = "3m"):
         except Exception as e:
             log.error(f"LINE 發送失敗: {e}")
             print(f"\n  ❌ LINE 發送失敗: {e}")
-    # ── 匯出 weekly.json ────────────────────────────────────
+    # ── 匯出 weekly.json（三個週期分別回測）────────────────
     try:
         from src.exporters.json_exporter import export_weekly
-        import yfinance as yf
 
-        def build_weekly_period(period_key, ranked, stock_results, ind_names, industries):
+        def build_weekly_period_with_backtest(period_key, ranked, ind_names, industries):
+            from src.fetchers.tw_stock import fetch_tw_history
+            from src.weekly_report.backtest import screen_stocks
             result = []
             for i, ind in enumerate(ranked[:5], 1):
                 code = ind["code"]
                 bd = ind["breakdown"]
+                ind_stocks = industries.get(code, {}).get("stocks", [])
+
+                # 重新抓價格跑該週期的回測
+                price_histories = {}
+                for s in ind_stocks:
+                    hist = fetch_tw_history(s["symbol"], days=365)
+                    if hist is not None:
+                        price_histories[s["symbol"]] = hist
+
+                candidates = [
+                    {"symbol": s["symbol"], "name": s["name"], "momentum_score": 70.0}
+                    for s in ind_stocks if s["symbol"] in price_histories
+                ]
+                passed = screen_stocks(candidates, price_histories, period_key, top_n=3)
+
                 stocks_out = []
-                for s in stock_results.get(code, []):
+                for s in passed:
                     symbol = s["symbol"]
-                    # 抓現價
                     try:
                         price = round(yf.Ticker(symbol).fast_info.last_price, 2)
                     except:
@@ -407,14 +422,16 @@ def run(period: str = "3m"):
                 })
             return result
 
+        print("\n  正在產生三個週期資料...")
         weekly_data = {
-            period: build_weekly_period(period, top_industries, stock_results, ind_names, industries)
+            "1m": build_weekly_period_with_backtest("1m", top_industries, ind_names, industries),
+            "3m": build_weekly_period_with_backtest("3m", top_industries, ind_names, industries),
+            "1y": build_weekly_period_with_backtest("1y", top_industries, ind_names, industries),
         }
         export_weekly(weekly_data)
-        print("\n  ✅ weekly.json 已匯出")
+        print("\n  ✅ weekly.json 已匯出（三個週期）")
     except Exception as e:
         print(f"\n  ❌ weekly.json 匯出失敗: {e}")
-
     log.info("=== 每週選股完成 ===")
     return top_industries, stock_results
 
