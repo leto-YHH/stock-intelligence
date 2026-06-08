@@ -393,16 +393,14 @@ def run(period: str = "3m"):
                 for s in passed:
                     symbol = s["symbol"]
                     try:
-                        ticker = yf.Ticker(f"{symbol}.TW")
-                        price = round(ticker.fast_info.last_price, 2)
-                        if not price:
-                                    raise ValueError
-                    except:
-                        try:
-                            ticker = yf.Ticker(f"{symbol}.TWO")
-                            price = round(ticker.fast_info.last_price, 2)
-                        except:
+                        hist = price_histories.get(symbol)
+                        if hist is not None and len(hist) > 0:
+                            valid = hist[hist["close"].notnull()]
+                            price = round(float(valid.iloc[-1]), 2) if len(valid) > 0 else 0
+                        else:
                             price = 0
+                    except:
+                        price = 0
                     bt = s["backtest"]
                     stocks_out.append({
                         "code": symbol,
