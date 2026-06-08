@@ -293,7 +293,7 @@ def run():
                 "value": f"{taiex['price']:,.0f}",
                 "chg": f"{'▲' if (taiex['pct'] or 0) >= 0 else '▼'} {abs(taiex['change'] or 0):,.0f} pts　{(taiex['pct'] or 0):+.2f}%",
                 "vol": "見台股官網",
-                "dir": "down" if (taiex['pct'] or 0) >= 0 else "up",
+                "dir": "up" if (taiex['pct'] or 0) >= 0 else "down",
             }
         ]
         for q in market["us_indices"]:
@@ -302,7 +302,8 @@ def run():
                 "value": f"{q['price']:,.0f}",
                 "chg": f"{'▲' if (q['pct'] or 0) >= 0 else '▼'} {abs(q['change'] or 0):,.0f} pts　{(q['pct'] or 0):+.2f}%",
                 "vol": "",
-                "dir": "down" if (q['pct'] or 0) >= 0 else "up",
+                "dir": "up" if (q['pct'] or 0) >= 0 else "down",
+
             })
 
         # 整理新聞
