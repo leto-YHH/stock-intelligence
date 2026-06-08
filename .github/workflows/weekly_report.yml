@@ -50,6 +50,7 @@ jobs:
           FRONTEND_DEPLOY_TOKEN: ${{ secrets.FRONTEND_DEPLOY_TOKEN }}
         run: |
           git clone https://x-access-token:${FRONTEND_DEPLOY_TOKEN}@github.com/leto-YHH/stock-intelligence-web.git frontend_repo
+          mkdir -p frontend_repo/public/data
           cp public_data/weekly.json frontend_repo/public/data/weekly.json
           cd frontend_repo
           git config user.email "actions@github.com"
