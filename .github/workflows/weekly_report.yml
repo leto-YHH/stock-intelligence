@@ -50,11 +50,11 @@ jobs:
           FRONTEND_DEPLOY_TOKEN: ${{ secrets.FRONTEND_DEPLOY_TOKEN }}
         run: |
           git clone https://x-access-token:${FRONTEND_DEPLOY_TOKEN}@github.com/leto-YHH/stock-intelligence-web.git frontend_repo
-          mkdir -p frontend_repo/public/data
+          mkdir -p frontend_repo/data
           cp public_data/weekly.json frontend_repo/data/weekly.json
           cd frontend_repo
           git config user.email "actions@github.com"
           git config user.name "GitHub Actions"
-          git add public/data/weekly.json
+          git add data/weekly.json
           git commit -m "chore: 更新 weekly.json $(date +'%Y-%m-%d')" || echo "無變更"
           git push
