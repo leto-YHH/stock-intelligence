@@ -393,9 +393,16 @@ def run(period: str = "3m"):
                 for s in passed:
                     symbol = s["symbol"]
                     try:
-                        price = round(yf.Ticker(symbol).fast_info.last_price, 2)
+                        ticker = yf.Ticker(f"{symbol}.TW")
+                        price = round(ticker.fast_info.last_price, 2)
+                        if not price:
+                                    raise ValueError
                     except:
-                        price = 0
+                        try:
+                            ticker = yf.Ticker(f"{symbol}.TWO")
+                            price = round(ticker.fast_info.last_price, 2)
+                        except:
+                            price = 0
                     bt = s["backtest"]
                     stocks_out.append({
                         "code": symbol,
