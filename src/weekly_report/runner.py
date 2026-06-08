@@ -215,7 +215,6 @@ def run(period: str = "3m"):
     top_stk   = settings["scoring"]["top_stocks_per_industry"]
     ind_names = {k: v["name"] for k, v in industries.items()}
 
-    # ── 模擬資料（相對強度、連動、新聞，之後換真實 fetcher）──
     from src.fetchers.tw_stock import fetch_tw_history
     from src.scorers.relative_strength import build_industry_history
 
@@ -248,7 +247,6 @@ def run(period: str = "3m"):
     news_articles = fetch_finance_news()
     print(f"[News] 抓取到 {len(news_articles)} 則新聞")
 
-    # ── 資金流向 + 月營收：真實 FinMind 資料 ─────────────────
     from src.fetchers.finmind import fetch_industry_revenues
 
     log.info("抓取 FinMind 三大法人資料...")
@@ -263,7 +261,7 @@ def run(period: str = "3m"):
 
     log.info("抓取月營收資料...")
     industry_revenues = fetch_industry_revenues(all_stock_ids, months=18)
-    
+
     # ── 第一層：產業評分 ────────────────────────────────────
     ranked = score_industries(
         industry_histories, benchmark_history,
@@ -363,6 +361,7 @@ def run(period: str = "3m"):
         except Exception as e:
             log.error(f"LINE 發送失敗: {e}")
             print(f"\n  ❌ LINE 發送失敗: {e}")
+
     # ── 匯出 weekly.json（三個週期分別回測）────────────────
     try:
         from src.exporters.json_exporter import export_weekly
@@ -376,7 +375,6 @@ def run(period: str = "3m"):
                 bd = ind["breakdown"]
                 ind_stocks = industries.get(code, {}).get("stocks", [])
 
-                # 重新抓價格跑該週期的回測
                 price_histories = {}
                 for s in ind_stocks:
                     hist = fetch_tw_history(s["symbol"], days=365)
@@ -395,11 +393,13 @@ def run(period: str = "3m"):
                     try:
                         hist = price_histories.get(symbol)
                         if hist is not None and len(hist) > 0:
-                            valid = hist[hist["close"].notnull()]
-                            price = round(float(valid.iloc[-1]), 2) if len(valid) > 0 else 0
+                            last_val = hist.dropna().iloc[-1]
+                            price = round(float(last_val), 2) if float(last_val) > 0 else 0
                         else:
                             price = 0
-                    except:
+                        print(f"[Price] {symbol} 收盤價: {price}")
+                    except Exception as e:
+                        print(f"[Price] {symbol} 股價抓取失敗: {e}")
                         price = 0
                     bt = s["backtest"]
                     stocks_out.append({
@@ -437,8 +437,10 @@ def run(period: str = "3m"):
         print("\n  ✅ weekly.json 已匯出（三個週期）")
     except Exception as e:
         print(f"\n  ❌ weekly.json 匯出失敗: {e}")
+
     log.info("=== 每週選股完成 ===")
     return top_industries, stock_results
+
 
 if __name__ == "__main__":
     logging.basicConfig(level=logging.WARNING, format="%(message)s")
