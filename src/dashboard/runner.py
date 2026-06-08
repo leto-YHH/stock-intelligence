@@ -41,32 +41,56 @@ def _fetch_news() -> list:
         return []
 
 
-def _summarize_news_with_claude(articles: list) -> dict:
-    if not articles:
-        # 沒有新聞時，改用大盤資料產生簡單摘要
-        articles = [{"title": "今日財經市場資料已更新，詳見大盤與指數區塊。"}]
+def _summarize_news_with_claude(articles: list, market: dict = None) -> dict:
     try:
         import anthropic
         client = anthropic.Anthropic(api_key=os.environ["ANTHROPIC_API_KEY"])
         titles = "\n".join(f"- {a['title']}" for a in articles[:15])
-        prompt = f"""以下是今日台灣財經新聞標題，請：
-1. 用 3–5 句話摘要今日市場重點（繁體中文）
-2. 給出整體市場情緒：positive / neutral / negative
-3. 給出情緒分數：-100 到 +100
 
-新聞：
+        # 整理大盤數據
+        market_context = ""
+        if market:
+            taiex = market.get("taiex", {})
+            tw_pct = taiex.get("pct", 0) or 0
+            market_context = f"""
+今日大盤表現：
+- 台股加權指數：{taiex.get('price', 'N/A'):,.0f} 點，{'+' if tw_pct >= 0 else ''}{tw_pct:.2f}%
+"""
+            for q in market.get("us_indices", []):
+                pct = q.get("pct", 0) or 0
+                market_context += f"- {q['name']}：{'+' if pct >= 0 else ''}{pct:.2f}%\n"
+
+        prompt = f"""你是一位專業的台股市場分析師，請根據以下資訊產生今日市場報告。
+
+{market_context}
+今日財經新聞：
 {titles}
+
+請完成以下三件事：
+
+1. **市場摘要**（約 100-150 字）：
+   - 說明今日大盤表現及主要原因
+   - 點出受影響的重點產業或族群
+   - 提及明日或短期需要關注的方向
+   - 使用專業財經用語，繁體中文
+
+2. **市場情緒**：根據大盤漲跌幅度與新聞綜合判斷
+   - positive（明顯偏多）、neutral（盤整觀望）、negative（明顯偏空）
+   - 大盤跌超過 2% 應傾向 negative，漲超過 1% 應傾向 positive
+
+3. **情緒分數**：-100 到 +100 的整數
+   - 大盤漲跌是主要依據（跌 3% 約 -60 分，漲 1% 約 +30 分）
+   - 新聞情緒作為微調（±20 分以內）
 
 請只回傳 JSON，格式：
 {{"summary": "...", "sentiment": "positive/neutral/negative", "score": 數字}}"""
 
         resp = client.messages.create(
             model="claude-sonnet-4-6",
-            max_tokens=500,
+            max_tokens=800,
             messages=[{"role": "user", "content": prompt}]
         )
-        text = resp.content[0].text
-        text = text.strip()
+        text = resp.content[0].text.strip()
         if text.startswith("```"):
             text = text.split("```")[1]
             if text.startswith("json"):
@@ -244,7 +268,7 @@ def run():
 
     market     = _fetch_market_data()
     news       = _fetch_news()
-    ai_summary = _summarize_news_with_claude(news)
+    ai_summary = _summarize_news_with_claude(news, market)
     html       = _build_html(today, market, news, ai_summary)
     text       = _build_text(today, market, ai_summary)
 
@@ -303,7 +327,6 @@ def run():
                 "chg": f"{'▲' if (q['pct'] or 0) >= 0 else '▼'} {abs(q['change'] or 0):,.0f} pts　{(q['pct'] or 0):+.2f}%",
                 "vol": "",
                 "dir": "up" if (q['pct'] or 0) >= 0 else "down",
-
             })
 
         # 整理新聞
@@ -333,6 +356,7 @@ def run():
 
     log.info("=== 每日 Dashboard 完成 ===")
     return {"html": html, "text": text, "errors": errors}
+
 
 if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(message)s")
