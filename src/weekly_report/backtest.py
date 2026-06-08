@@ -22,7 +22,7 @@ HOLD_DAYS = {"1m": 22, "3m": 66, "1y": 250}
 
 # 各週期的最低門檻
 MIN_WIN_RATE   = {"1m": 0.55, "3m": 0.55, "1y": 0.60}
-MIN_AVG_RETURN = {"1m": 0.03, "3m": 0.06, "1y": 0.12}
+MIN_AVG_RETURN = {"1m": 0.03, "3m": 0.03, "1y": 0.06}
 
 
 def rolling_backtest(
