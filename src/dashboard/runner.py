@@ -285,7 +285,7 @@ def run():
     try:
         from src.fetchers.portfolio import fetch_portfolio, build_portfolio_data
         holdings = fetch_portfolio()
-        portfolio_data = build_portfolio_data(holdings)
+        portfolio_data = build_portfolio_data(holdings, news)
         log.info(f"持股資料：共 {len(portfolio_data)} 檔")
     except Exception as e:
         log.warning(f"持股資料抓取失敗: {e}")
