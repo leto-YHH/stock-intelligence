@@ -31,6 +31,24 @@ def load_config():
     return industries, settings
 
 
+def get_market_cap_twd(symbol: str) -> float:
+    """
+    抓取個股市值（台幣億元）
+    學術依據：Fama-French 三因子模型（1992）規模效應
+    小型股長期報酬優於大型股，短線波動空間也較大
+    """
+    try:
+        for suffix in [".TW", ".TWO"]:
+            t = yf.Ticker(f"{symbol}{suffix}")
+            cap = t.fast_info.market_cap
+            if cap and cap > 0:
+                # yfinance 回傳的是台幣，轉成億
+                return cap / 1e8
+        return 0
+    except:
+        return 0
+
+
 def score_industries(
     industry_histories, benchmark_history,
     correlation_quotes, sp500_pct,
@@ -120,6 +138,27 @@ def build_html_report(period: str, ranked: list, stock_results: dict, ind_names:
     explanation = """
     <hr>
     <h3>📖 名詞說明</h3>
+    <h4>📊 市值篩選邏輯（基於 Fama-French 規模效應）</h4>
+    <table border="1" cellpadding="6" cellspacing="0" style="border-collapse:collapse;width:100%">
+      <tr style="background:#f0f0f0">
+        <th>週期</th><th>市值篩選</th><th>學術依據</th>
+      </tr>
+      <tr>
+        <td><b>1個月</b></td>
+        <td>中小型股（市值 &lt; 1,000億）</td>
+        <td>小型股波動大、短線空間大；規模效應在短期動能上更明顯</td>
+      </tr>
+      <tr>
+        <td><b>3個月</b></td>
+        <td>不限制</td>
+        <td>中線兼顧成長性與流動性</td>
+      </tr>
+      <tr>
+        <td><b>1年</b></td>
+        <td>大型股（市值 &gt; 1,000億）</td>
+        <td>長期持有需基本面穩健、財務透明度高的龍頭企業</td>
+      </tr>
+    </table>
 
     <h4>🔢 個股回測指標</h4>
     <table border="1" cellpadding="6" cellspacing="0" style="border-collapse:collapse;width:100%">
@@ -137,59 +176,20 @@ def build_html_report(period: str, ranked: list, stock_results: dict, ind_names:
         <td>越高越好，1個月門檻 +3%，3個月 +6%，1年 +12%</td>
       </tr>
       <tr>
-        <td><b>中位數報酬</b></td>
-        <td>排除極端值後的「典型」獲利幅度</td>
-        <td>接近平均報酬代表結果穩定，差異大代表偶爾有極端值</td>
-      </tr>
-      <tr>
         <td><b>報酬穩定度</b></td>
         <td>每次持有的報酬是否集中、不飄移</td>
         <td>越高越穩定；低於 20% 代表結果波動大，風險較高</td>
       </tr>
     </table>
 
-    <h4>🏭 產業評分維度（各 0–100 分）</h4>
-    <table border="1" cellpadding="6" cellspacing="0" style="border-collapse:collapse;width:100%">
-      <tr style="background:#f0f0f0">
-        <th>維度</th><th>意思</th><th>1個月權重</th><th>3個月權重</th><th>1年權重</th>
-      </tr>
-      <tr>
-        <td><b>資金（外資/投信）</b></td>
-        <td>外資與投信近期買超張數，代表法人對該產業的信心</td>
-        <td>35%</td><td>20%</td><td>10%</td>
-      </tr>
-      <tr>
-        <td><b>情緒（新聞）</b></td>
-        <td>AI 分析近期財經新聞的正負面情緒</td>
-        <td>30%</td><td>15%</td><td>5%</td>
-      </tr>
-      <tr>
-        <td><b>強度（相對強度）</b></td>
-        <td>該產業股價相對大盤的強弱，強者恆強</td>
-        <td>20%</td><td>30%</td><td>20%</td>
-      </tr>
-      <tr>
-        <td><b>連動（美國指數）</b></td>
-        <td>對應美國連動指數（費城半導體、BDI 等）的超額報酬</td>
-        <td>15%</td><td>20%</td><td>15%</td>
-      </tr>
-      <tr>
-        <td><b>基本面（月營收）</b></td>
-        <td>近期月營收年增率是否加速成長</td>
-        <td>0%</td><td>15%</td><td>50%</td>
-      </tr>
-    </table>
-
     <p style="color:#888;font-size:12px;">
-    ⚠️ 本報告由 Stock Intelligence System 自動產生，所有數據來自歷史回測，不代表未來表現，僅供參考，不構成投資建議。投資人須自行承擔投資風險。
+    ⚠️ 本報告由 Stock Intelligence System 自動產生，所有數據來自歷史回測，不代表未來表現，僅供參考，不構成投資建議。
     </p>
     """
 
     return f"""
-    
     <html><body style="font-family:Arial,sans-serif;max-width:800px;margin:auto;">
-    <h2>📊 每週選股報告｜{today}｜目標週期：{period_label}</h2>
-
+    <h2>📊 每日選股報告｜{today}｜目標週期：{period_label}</h2>
     <h3>🏆 產業排名</h3>
     <table border="1" cellpadding="6" cellspacing="0" style="border-collapse:collapse;width:100%">
       <tr style="background:#f0f0f0">
@@ -198,10 +198,8 @@ def build_html_report(period: str, ranked: list, stock_results: dict, ind_names:
       </tr>
       {rows}
     </table>
-
     <h3>⭐ 推薦個股</h3>
     {stock_sections}
-
     {explanation}
     </body></html>
     """
@@ -232,7 +230,6 @@ def run(period: str = "3m"):
 
     benchmark_history = fetch_tw_history("^TWII", days=90)
     if benchmark_history is None:
-        import yfinance as yf
         benchmark_history = yf.Ticker("^TWII").history(period="90d")["Close"]
     print(f"[RS] 大盤歷史取得 {len(benchmark_history)} 筆")
 
@@ -262,7 +259,6 @@ def run(period: str = "3m"):
     log.info("抓取月營收資料...")
     industry_revenues = fetch_industry_revenues(all_stock_ids, months=18)
 
-    # ── 第一層：產業評分 ────────────────────────────────────
     ranked = score_industries(
         industry_histories, benchmark_history,
         correlation_quotes, sp500_pct,
@@ -273,7 +269,6 @@ def run(period: str = "3m"):
     )
     top_industries = ranked[:top_n]
 
-    # ── 第二、三層：個股篩選 + 回測 ────────────────────────
     stock_results = {}
     for ind in top_industries:
         code = ind["code"]
@@ -299,13 +294,10 @@ def run(period: str = "3m"):
         stock_results[code] = passed
         log.info(f"  {ind_names.get(code, code)}：通過 {len(passed)} 檔")
 
-    # ── Console 輸出 ────────────────────────────────────────
     period_label = {"1m": "1 個月", "3m": "3 個月", "1y": "1 年"}[period]
     print(f"\n{'='*46}")
-    print(f"  每週選股報告｜目標週期：{period_label}")
+    print(f"  每日選股報告｜目標週期：{period_label}")
     print(f"{'='*46}")
-    print(f"\n  {'排名':<4} {'產業':<12} {'綜合分':>6}  {'資金':>5} {'情緒':>5} {'強度':>5} {'連動':>5} {'基本面':>6}")
-    print(f"  {'-'*60}")
 
     for i, ind in enumerate(top_industries, 1):
         code = ind["code"]
@@ -327,11 +319,10 @@ def run(period: str = "3m"):
             bt = s["backtest"]
             print(f"     ✅ {s['name']}（{s['symbol']}）勝率={bt['win_rate']:.0%} 均報={bt['avg_return']:+.1%}")
 
-    # ── 寄送 Email ──────────────────────────────────────────
     try:
         recipients = settings.get("recipients", [os.environ["REPORT_TO_EMAIL"]])
         html = build_html_report(period, ranked, stock_results, ind_names)
-        subject = f"📊 每週選股報告｜{date.today().strftime('%Y-%m-%d')}｜{period_label}"
+        subject = f"📊 每日選股報告｜{date.today().strftime('%Y-%m-%d')}｜{period_label}"
         for addr in recipients:
             send_email(subject, html, to_addr=addr)
             print(f"\n  ✅ Email 已寄出至 {addr}")
@@ -339,11 +330,10 @@ def run(period: str = "3m"):
         log.error(f"Email 寄送失敗: {e}")
         print(f"\n  ❌ Email 寄送失敗: {e}")
 
-    # ── 寄送 LINE ────────────────────────────────────────────
     if os.getenv("LINE_CHANNEL_TOKEN"):
         try:
             from src.notifiers.line_notifier import send_line
-            lines = [f"📊 每週選股報告｜{date.today().strftime('%Y-%m-%d')}｜{period_label}", ""]
+            lines = [f"📊 每日選股報告｜{date.today().strftime('%Y-%m-%d')}｜{period_label}", ""]
             for i, ind in enumerate(top_industries, 1):
                 code = ind["code"]
                 lines.append(f"{i}. {ind_names.get(code, code)}　{ind['score']}分")
@@ -362,7 +352,6 @@ def run(period: str = "3m"):
             log.error(f"LINE 發送失敗: {e}")
             print(f"\n  ❌ LINE 發送失敗: {e}")
 
-    # ── 匯出 weekly.json（三個週期分別回測）────────────────
     try:
         from src.exporters.json_exporter import export_weekly
 
@@ -381,10 +370,23 @@ def run(period: str = "3m"):
                     if hist is not None:
                         price_histories[s["symbol"]] = hist
 
-                candidates = [
-                    {"symbol": s["symbol"], "name": s["name"], "momentum_score": 70.0}
-                    for s in ind_stocks if s["symbol"] in price_histories
-                ]
+                # ── 市值篩選（基於 Fama-French 規模效應）──────────────
+                # 1m: 小型股波動大，短線空間大 → 只推市值 < 1000億
+                # 3m: 不限制
+                # 1y: 長期需穩健龍頭 → 只推市值 > 1000億
+                candidates = []
+                for s in ind_stocks:
+                    if s["symbol"] not in price_histories:
+                        continue
+                    cap_b = get_market_cap_twd(s["symbol"])
+                    if period_key == "1m" and cap_b > 1000 and cap_b > 0:
+                        print(f"[MarketCap] {s['symbol']} {s['name']} 市值 {cap_b:.0f}億，跳過（1m 只推中小型）")
+                        continue
+                    if period_key == "1y" and 0 < cap_b < 1000:
+                        print(f"[MarketCap] {s['symbol']} {s['name']} 市值 {cap_b:.0f}億，跳過（1y 只推大型）")
+                        continue
+                    candidates.append({"symbol": s["symbol"], "name": s["name"], "momentum_score": 70.0})
+
                 passed = screen_stocks(candidates, price_histories, period_key, top_n=3)
 
                 stocks_out = []
