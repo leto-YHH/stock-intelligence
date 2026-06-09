@@ -8,7 +8,10 @@
       {"symbol": "2454", "name": "聯發科"},
       {"symbol": "2303", "name": "聯電"},
       {"symbol": "2379", "name": "瑞昱"},
-      {"symbol": "3711", "name": "日月光投控"}
+      {"symbol": "3711", "name": "日月光投控"},
+      {"symbol": "5347", "name": "世界先進"},
+      {"symbol": "6770", "name": "力積電"},
+      {"symbol": "3034", "name": "聯詠"}
     ]
   },
   "TECH": {
@@ -20,7 +23,10 @@
       {"symbol": "2353", "name": "宏碁"},
       {"symbol": "3231", "name": "緯創"},
       {"symbol": "2356", "name": "英業達"},
-      {"symbol": "6669", "name": "緯穎"}
+      {"symbol": "6669", "name": "緯穎"},
+      {"symbol": "2376", "name": "技嘉"},
+      {"symbol": "2377", "name": "微星"},
+      {"symbol": "8210", "name": "勤誠"}
     ]
   },
   "FIN": {
@@ -32,7 +38,10 @@
       {"symbol": "2881", "name": "富邦金"},
       {"symbol": "2891", "name": "中信金"},
       {"symbol": "2884", "name": "玉山金"},
-      {"symbol": "2886", "name": "兆豐金"}
+      {"symbol": "2886", "name": "兆豐金"},
+      {"symbol": "2890", "name": "永豐金"},
+      {"symbol": "2887", "name": "台新金"},
+      {"symbol": "2892", "name": "第一金"}
     ]
   },
   "SHIP": {
@@ -44,7 +53,10 @@
       {"symbol": "2609", "name": "陽明"},
       {"symbol": "2615", "name": "萬海"},
       {"symbol": "2601", "name": "益航"},
-      {"symbol": "2637", "name": "慧洋-KY"}
+      {"symbol": "2637", "name": "慧洋-KY"},
+      {"symbol": "2636", "name": "台驊投控"},
+      {"symbol": "2641", "name": "正德"},
+      {"symbol": "2617", "name": "台航"}
     ]
   },
   "EV": {
@@ -55,8 +67,11 @@
       {"symbol": "1536", "name": "和大"},
       {"symbol": "6183", "name": "關貿"},
       {"symbol": "3014", "name": "聯陽"},
-      {"symbol": "8358", "name": "金居"},
-      {"symbol": "1519", "name": "華城"}
+      {"symbol": "1519", "name": "華城"},
+      {"symbol": "3665", "name": "貿聯-KY"},
+      {"symbol": "3023", "name": "信邦"},
+      {"symbol": "1590", "name": "亞德客-KY"},
+      {"symbol": "2308", "name": "台達電"}
     ]
   },
   "BIO": {
@@ -66,9 +81,12 @@
     "stocks": [
       {"symbol": "4763", "name": "材料-KY"},
       {"symbol": "1789", "name": "神隆"},
-      {"symbol": "6547", "name": "安派科"},
       {"symbol": "4107", "name": "邦特"},
-      {"symbol": "1795", "name": "美時"}
+      {"symbol": "1795", "name": "美時"},
+      {"symbol": "3222", "name": "健策"},
+      {"symbol": "1760", "name": "寶齡富錦"},
+      {"symbol": "6461", "name": "益得生醫"},
+      {"symbol": "4174", "name": "浩鼎"}
     ]
   },
   "CHEM": {
@@ -80,7 +98,10 @@
       {"symbol": "1303", "name": "南亞"},
       {"symbol": "1326", "name": "台化"},
       {"symbol": "6505", "name": "台塑石化"},
-      {"symbol": "1304", "name": "台聚"}
+      {"symbol": "1304", "name": "台聚"},
+      {"symbol": "1310", "name": "台苯"},
+      {"symbol": "1315", "name": "達新"},
+      {"symbol": "1314", "name": "中石化"}
     ]
   },
   "ELEC": {
@@ -92,7 +113,10 @@
       {"symbol": "3006", "name": "晶技"},
       {"symbol": "2327", "name": "國巨"},
       {"symbol": "2328", "name": "廣宇"},
-      {"symbol": "3443", "name": "創意"}
+      {"symbol": "3443", "name": "創意"},
+      {"symbol": "3406", "name": "玉晶光"},
+      {"symbol": "6209", "name": "今國光"},
+      {"symbol": "2348", "name": "海華"}
     ]
   }
 }
