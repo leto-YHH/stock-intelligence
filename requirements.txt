@@ -4,3 +4,4 @@ feedparser>=6.0.10
 anthropic>=0.40.0
 pandas>=2.2.0
 numpy>=1.26.0
+supabase>=2.0.0

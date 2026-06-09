@@ -21,28 +21,19 @@ def export_dashboard(
     sentiment: str,
     summary: str,
     daily_summary: str,
+    portfolio: list[dict] = None,
 ):
-    """
-    匯出每日 Dashboard JSON
-
-    Args:
-        indices: 六大指數資料
-        news: 今日新聞列表
-        impacts: 台股影響分析
-        sentiment: 市場情緒（例：▲ 偏多　+72）
-        summary: 市場摘要文字
-        daily_summary: 本日操作重點
-    """
     ensure_output_dir()
 
     data = {
         "date": date.today().strftime("%Y-%m-%d"),
         "sentiment": sentiment,
         "summary": summary,
+        "dailySummary": daily_summary,
         "indices": indices,
         "news": news,
         "impacts": impacts,
-        "dailySummary": daily_summary,
+        "portfolio": portfolio or [],
     }
 
     output_path = OUTPUT_DIR / "dashboard.json"
@@ -54,12 +45,6 @@ def export_dashboard(
 
 
 def export_weekly(weekly_data: dict):
-    """
-    匯出每週選股 JSON
-
-    Args:
-        weekly_data: { '1m': [...], '3m': [...], '1y': [...] }
-    """
     ensure_output_dir()
 
     data = {
@@ -76,13 +61,6 @@ def export_weekly(weekly_data: dict):
 
 
 def export_institution(buy: list[dict], sell: list[dict]):
-    """
-    匯出三大法人共識 JSON
-
-    Args:
-        buy:  三大法人同時買超的個股清單
-        sell: 三大法人同時賣超的個股清單
-    """
     ensure_output_dir()
 
     data = {

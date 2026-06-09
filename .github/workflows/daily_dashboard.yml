@@ -33,7 +33,10 @@ jobs:
           FINMIND_TOKEN:        ${{ secrets.FINMIND_TOKEN }}
           LINE_USER_ID:         ${{ secrets.LINE_USER_ID }}
           LINE_CHANNEL_TOKEN:   ${{ secrets.LINE_CHANNEL_TOKEN }}
+          SUPABASE_URL:         ${{ secrets.SUPABASE_URL }}
+          SUPABASE_ANON_KEY:    ${{ secrets.SUPABASE_ANON_KEY }}
         run: python -m src.dashboard.runner
+
       - name: 推送 JSON 到前端 repo
         env:
           FRONTEND_DEPLOY_TOKEN: ${{ secrets.FRONTEND_DEPLOY_TOKEN }}

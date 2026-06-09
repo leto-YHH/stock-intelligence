@@ -47,7 +47,6 @@ def _summarize_news_with_claude(articles: list, market: dict = None) -> dict:
         client = anthropic.Anthropic(api_key=os.environ["ANTHROPIC_API_KEY"])
         titles = "\n".join(f"- {a['title']}" for a in articles[:15])
 
-        # 整理大盤數據
         market_context = ""
         if market:
             taiex = market.get("taiex", {})
@@ -73,7 +72,7 @@ def _summarize_news_with_claude(articles: list, market: dict = None) -> dict:
    - 點出今日最強與最弱的族群
    - 繁體中文，專業但易讀
 
-2. **深度分析**（500左右字）：
+2. **深度分析**（500字左右）：
    - 深入分析今日大盤走勢成因，引用具體指數數據
    - 詳細分析受影響的產業族群與個股動向，至少提及3-4個族群
    - 從總體經濟角度解讀（Fed政策、匯率、資金流向、外資動態、美債殖利率）
@@ -281,6 +280,17 @@ def run():
     market     = _fetch_market_data()
     news       = _fetch_news()
     ai_summary = _summarize_news_with_claude(news, market)
+
+    # 抓取持股資料
+    try:
+        from src.fetchers.portfolio import fetch_portfolio, build_portfolio_data
+        holdings = fetch_portfolio()
+        portfolio_data = build_portfolio_data(holdings)
+        log.info(f"持股資料：共 {len(portfolio_data)} 檔")
+    except Exception as e:
+        log.warning(f"持股資料抓取失敗: {e}")
+        portfolio_data = []
+
     html       = _build_html(today, market, news, ai_summary)
     text       = _build_text(today, market, ai_summary)
 
@@ -358,6 +368,7 @@ def run():
             sentiment=sentiment_str,
             summary=ai_summary.get("summary", ""),
             daily_summary=ai_summary.get("dailySummary", ai_summary.get("summary", "")),
+            portfolio=portfolio_data,
         )
         log.info("✅ dashboard.json 匯出成功")
     except Exception as e:
