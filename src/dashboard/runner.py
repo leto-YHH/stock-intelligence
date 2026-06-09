@@ -65,7 +65,7 @@ def _summarize_news_with_claude(articles: list, market: dict = None) -> dict:
 今日財經新聞：
 {titles}
 
-請完成以下四件事：
+請完成以下五件事：
 
 1. **市場摘要**（300字左右）：
    - 說明今日市場整體狀況與主要漲跌原因
@@ -89,12 +89,18 @@ def _summarize_news_with_claude(articles: list, market: dict = None) -> dict:
    - 大盤漲跌是主要依據（跌 3% 約 -60 分，漲 1% 約 +30 分）
    - 新聞情緒作為微調（±20 分以內）
 
+5. **台股影響分析**：針對今日3-5則重要新聞，分析對台股的影響
+   - topic: 新聞主題（10字以內）
+   - dir: pos（正面）/ neg（負面）/ warn（警示）/ neutral（中性）
+   - dirText: 方向說明（如「強烈正面」、「中線正面」、「新興市場警訊」、「個股中性」）
+   - impact: 對台股具體影響（20字以內，如「AI伺服器族群受惠」、「半導體設備需求延續」）
+
 請只回傳 JSON，格式：
-{{"summary": "...", "dailySummary": "...", "sentiment": "positive/neutral/negative", "score": 數字}}"""
+{{"summary": "...", "dailySummary": "...", "sentiment": "positive/neutral/negative", "score": 數字, "impacts": [{{"topic": "...", "dir": "pos/neg/warn/neutral", "dirText": "...", "impact": "..."}}]}}"""
 
         resp = client.messages.create(
             model="claude-sonnet-4-6",
-            max_tokens=2000,
+            max_tokens=2500,
             messages=[{"role": "user", "content": prompt}]
         )
         text = resp.content[0].text.strip()
@@ -106,7 +112,7 @@ def _summarize_news_with_claude(articles: list, market: dict = None) -> dict:
         return json.loads(text)
     except Exception as e:
         log.warning(f"Claude 摘要失敗: {e}")
-        return {"summary": "今日新聞摘要暫時無法產生。", "dailySummary": "今日深度分析暫時無法產生。", "sentiment": "neutral", "score": 0}
+        return {"summary": "今日新聞摘要暫時無法產生。", "dailySummary": "今日深度分析暫時無法產生。", "sentiment": "neutral", "score": 0, "impacts": []}
 
 
 def _build_html(date_str: str, market: dict, news: list, ai_summary: dict) -> str:
@@ -364,7 +370,7 @@ def run():
         export_dashboard(
             indices=indices_json,
             news=news_json,
-            impacts=[],
+            impacts=ai_summary.get("impacts", []),
             sentiment=sentiment_str,
             summary=ai_summary.get("summary", ""),
             daily_summary=ai_summary.get("dailySummary", ai_summary.get("summary", "")),

@@ -1,13 +1,11 @@
 """
 財經新聞抓取器
 來源：RSS Feed（免費，無需 API key）
-可選：NewsAPI（需 NEWSAPI_KEY 環境變數）
 """
 
 import os
 import logging
 import feedparser
-import requests
 from datetime import datetime, timezone, timedelta
 
 log = logging.getLogger(__name__)
@@ -17,6 +15,17 @@ RSS_FEEDS = [
     {"name": "經濟日報", "url": "https://money.udn.com/rssfeed/news/1001/5591/RSS.xml"},
     {"name": "Yahoo股市-研究", "url": "https://tw.stock.yahoo.com/rss?category=research"},
     {"name": "Yahoo股市-新聞", "url": "https://tw.stock.yahoo.com/rss?category=news"},
+]
+
+# 只保留跟股市/金融/產業相關的新聞
+STOCK_KEYWORDS = [
+    "台股", "美股", "股市", "指數", "漲停", "跌停", "外資", "法人", "投信", "自營",
+    "半導體", "AI", "伺服器", "科技", "金融", "航運", "Fed", "升息", "降息", "利率",
+    "營收", "獲利", "EPS", "產業", "供應鏈", "晶片", "電動車", "生技", "新藥",
+    "那斯達克", "S&P", "道瓊", "費城", "ETF", "基金", "匯率", "美元",
+    "台積電", "聯發科", "鴻海", "廣達", "緯創", "日月光", "聯電",
+    "買超", "賣超", "籌碼", "融資", "融券", "主力", "波段", "漲跌",
+    "季報", "年報", "法說", "股東會", "除權", "除息", "配息",
 ]
 
 INDUSTRY_KEYWORDS = {
@@ -31,6 +40,12 @@ INDUSTRY_KEYWORDS = {
 }
 
 
+def _is_relevant(title: str, summary: str) -> bool:
+    """判斷新聞是否跟股市/金融/產業相關"""
+    text = title + " " + summary
+    return any(kw in text for kw in STOCK_KEYWORDS)
+
+
 def _tag_industries(title: str, summary: str) -> list:
     """判斷新聞屬於哪些產業"""
     text = (title + " " + summary).lower()
@@ -41,7 +56,7 @@ def _tag_industries(title: str, summary: str) -> list:
     return tagged
 
 
-def fetch_rss(max_per_feed: int = 8) -> list:
+def fetch_rss(max_per_feed: int = 10) -> list:
     articles = []
     for feed_info in RSS_FEEDS:
         try:
@@ -50,6 +65,8 @@ def fetch_rss(max_per_feed: int = 8) -> list:
                 title   = entry.get("title", "").strip()
                 summary = entry.get("summary", "")[:200]
                 if not title:
+                    continue
+                if not _is_relevant(title, summary):
                     continue
                 articles.append({
                     "source":     feed_info["name"],
