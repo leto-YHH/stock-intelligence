@@ -368,10 +368,11 @@ def run(period: str = "3m"):
                 ind_stocks = industries.get(code, {}).get("stocks", [])
 
                 price_histories = {}
+                days = 1825 if period_key == "1y" else 365
                 for s in ind_stocks:
-                    hist = fetch_tw_history(s["symbol"], days=365)
+                    hist = fetch_tw_history(s["symbol"], days=days)
                     if hist is not None:
-                        price_histories[s["symbol"]] = hist
+                         price_histories[s["symbol"]] = hist
 
                 # ── 市值篩選（基於 Fama-French 規模效應）──────────────
                 # 只對適合有小型股的產業篩選
