@@ -5,6 +5,7 @@ import os
 import logging
 import requests
 import yfinance as yf
+from datetime import date, timedelta
 from supabase import create_client
 
 log = logging.getLogger(__name__)
@@ -51,11 +52,12 @@ def fetch_institution_data(code: str) -> dict:
     """從 FinMind 抓取法人買賣超"""
     try:
         token = os.environ.get("FINMIND_TOKEN", "")
+        start_date = (date.today() - timedelta(days=10)).strftime("%Y-%m-%d")
         url = "https://api.finmindtrade.com/api/v4/data"
         params = {
             "dataset": "TaiwanStockInstitutionalInvestorsBuySell",
             "data_id": code,
-            "start_date": "2026-06-01",
+            "start_date": start_date,
             "token": token,
         }
         resp = requests.get(url, params=params, timeout=15)
@@ -63,17 +65,10 @@ def fetch_institution_data(code: str) -> dict:
         if not data:
             return {"foreign": 0, "trust": 0, "dealer": 0, "total": 0}
 
-        latest = {}
-        for row in data:
-            date = row.get("date", "")
-            if date not in latest or date > latest[date].get("date", ""):
-                latest[date] = row
-
-        if not latest:
-            return {"foreign": 0, "trust": 0, "dealer": 0, "total": 0}
-
-        last_date = sorted(latest.keys())[-1]
+        # 找最新日期
+        last_date = sorted(set(r.get("date", "") for r in data))[-1]
         rows_on_date = [r for r in data if r.get("date") == last_date]
+        print(f"[法人] {code} 最新日期: {last_date}, 筆數: {len(rows_on_date)}")
 
         foreign = trust = dealer = 0
         for row in rows_on_date:
@@ -89,6 +84,7 @@ def fetch_institution_data(code: str) -> dict:
                 dealer += net
 
         total = foreign + trust + dealer
+        print(f"[法人] {code} 外資:{foreign} 投信:{trust} 自營:{dealer} 合計:{total}")
         return {
             "foreign": foreign,
             "trust": trust,
