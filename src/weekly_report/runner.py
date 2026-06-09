@@ -386,7 +386,7 @@ def run(period: str = "3m"):
                         if period_key == "1m" and cap_b > 3000 and cap_b > 0:
                             print(f"[MarketCap] {s['symbol']} {s['name']} 市值 {cap_b:.0f}億，跳過（1m 只推中小型）")
                             continue
-                        if period_key == "1y" and 0 < cap_b < 3000:
+                        if period_key == "1y" and 0 < cap_b < 1000:
                             print(f"[MarketCap] {s['symbol']} {s['name']} 市值 {cap_b:.0f}億，跳過（1y 只推大型）")
                             continue
                     candidates.append({"symbol": s["symbol"], "name": s["name"], "momentum_score": 70.0})
