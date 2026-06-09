@@ -24,6 +24,10 @@ from src.scorers.fundamentals      import calc_fundamental_scores
 log = logging.getLogger(__name__)
 CONFIG_DIR = Path(__file__).parent.parent.parent / "config"
 
+# 只對這些產業做市值篩選（天生有中小型股的產業）
+# 半導體、金融、航運天生都是大型股，不做篩選
+MARKETCAP_FILTER_INDUSTRIES = {"TECH", "EV", "BIO", "CHEM", "ELEC"}
+
 
 def load_config():
     industries = json.loads((CONFIG_DIR / "industries.json").read_text())
@@ -35,14 +39,12 @@ def get_market_cap_twd(symbol: str) -> float:
     """
     抓取個股市值（台幣億元）
     學術依據：Fama-French 三因子模型（1992）規模效應
-    小型股長期報酬優於大型股，短線波動空間也較大
     """
     try:
         for suffix in [".TW", ".TWO"]:
             t = yf.Ticker(f"{symbol}{suffix}")
             cap = t.fast_info.market_cap
             if cap and cap > 0:
-                # yfinance 回傳的是台幣，轉成億
                 return cap / 1e8
         return 0
     except:
@@ -145,7 +147,7 @@ def build_html_report(period: str, ranked: list, stock_results: dict, ind_names:
       </tr>
       <tr>
         <td><b>1個月</b></td>
-        <td>中小型股（市值 &lt; 1,000億）</td>
+        <td>中小型股優先（市值 &lt; 3,000億）</td>
         <td>小型股波動大、短線空間大；規模效應在短期動能上更明顯</td>
       </tr>
       <tr>
@@ -155,10 +157,11 @@ def build_html_report(period: str, ranked: list, stock_results: dict, ind_names:
       </tr>
       <tr>
         <td><b>1年</b></td>
-        <td>大型股（市值 &gt; 1,000億）</td>
+        <td>大型股優先（市值 &gt; 3,000億）</td>
         <td>長期持有需基本面穩健、財務透明度高的龍頭企業</td>
       </tr>
     </table>
+    <p style="font-size:12px;color:#666;">※ 半導體、金融、航運天生多為大型股，不套用市值篩選。</p>
 
     <h4>🔢 個股回測指標</h4>
     <table border="1" cellpadding="6" cellspacing="0" style="border-collapse:collapse;width:100%">
@@ -371,20 +374,20 @@ def run(period: str = "3m"):
                         price_histories[s["symbol"]] = hist
 
                 # ── 市值篩選（基於 Fama-French 規模效應）──────────────
-                # 1m: 小型股波動大，短線空間大 → 只推市值 < 1000億
-                # 3m: 不限制
-                # 1y: 長期需穩健龍頭 → 只推市值 > 1000億
+                # 只對適合有小型股的產業篩選
+                # 半導體、金融、航運天生都是大型股，不篩
                 candidates = []
                 for s in ind_stocks:
                     if s["symbol"] not in price_histories:
                         continue
-                    cap_b = get_market_cap_twd(s["symbol"])
-                    if period_key == "1m" and cap_b > 3000 and cap_b > 0:
-                        print(f"[MarketCap] {s['symbol']} {s['name']} 市值 {cap_b:.0f}億，跳過（1m 只推中小型）")
-                        continue
-                    if period_key == "1y" and 0 < cap_b < 3000:
-                        print(f"[MarketCap] {s['symbol']} {s['name']} 市值 {cap_b:.0f}億，跳過（1y 只推大型）")
-                        continue
+                    if code in MARKETCAP_FILTER_INDUSTRIES:
+                        cap_b = get_market_cap_twd(s["symbol"])
+                        if period_key == "1m" and cap_b > 3000 and cap_b > 0:
+                            print(f"[MarketCap] {s['symbol']} {s['name']} 市值 {cap_b:.0f}億，跳過（1m 只推中小型）")
+                            continue
+                        if period_key == "1y" and 0 < cap_b < 3000:
+                            print(f"[MarketCap] {s['symbol']} {s['name']} 市值 {cap_b:.0f}億，跳過（1y 只推大型）")
+                            continue
                     candidates.append({"symbol": s["symbol"], "name": s["name"], "momentum_score": 70.0})
 
                 passed = screen_stocks(candidates, price_histories, period_key, top_n=3)
