@@ -48,7 +48,7 @@ def fetch_stock_price(code: str) -> dict:
         return {"price": 0, "prev": 0, "chg": 0, "chg_pct": 0}
 
 
-def fetch_institution_data(code: str) -> dict:
+def fetch_institution_data(code: str) -> dict:   
     """從 FinMind 抓取法人買賣超"""
     try:
         token = os.environ.get("FINMIND_TOKEN", "")
@@ -69,6 +69,8 @@ def fetch_institution_data(code: str) -> dict:
         last_date = sorted(set(r.get("date", "") for r in data))[-1]
         rows_on_date = [r for r in data if r.get("date") == last_date]
         print(f"[法人] {code} 最新日期: {last_date}, 筆數: {len(rows_on_date)}")
+        if rows_on_date:
+            print(f"[法人] 欄位範例: {rows_on_date[0]}")
 
         foreign = trust = dealer = 0
         for row in rows_on_date:
