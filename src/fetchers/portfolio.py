@@ -78,11 +78,11 @@ def fetch_institution_data(code: str) -> dict:
             buy = int(row.get("buy", 0))
             sell = int(row.get("sell", 0))
             net = (buy - sell) // 1000
-            if "外資" in name:
+            if "Foreign_Investor" in name:
                 foreign += net
-            elif "投信" in name:
+            elif "Investment_Trust" in name:
                 trust += net
-            elif "自營" in name:
+            elif "Dealer" in name:
                 dealer += net
 
         total = foreign + trust + dealer
