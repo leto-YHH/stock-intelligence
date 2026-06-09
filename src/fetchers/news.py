@@ -14,9 +14,9 @@ log = logging.getLogger(__name__)
 TZ_TW = timezone(timedelta(hours=8))
 
 RSS_FEEDS = [
-    {"name": "鉅亨網",  "url": "https://news.cnyes.com/rss/index"},
     {"name": "經濟日報", "url": "https://money.udn.com/rssfeed/news/1001/5591/RSS.xml"},
-    {"name": "Yahoo財經", "url": "https://tw.finance.yahoo.com/rss/"},
+    {"name": "Yahoo股市-研究", "url": "https://tw.stock.yahoo.com/rss?category=research"},
+    {"name": "Yahoo股市-新聞", "url": "https://tw.stock.yahoo.com/rss?category=news"},
 ]
 
 INDUSTRY_KEYWORDS = {
