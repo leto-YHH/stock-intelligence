@@ -66,28 +66,34 @@ def _summarize_news_with_claude(articles: list, market: dict = None) -> dict:
 今日財經新聞：
 {titles}
 
-請完成以下三件事：
+請完成以下四件事：
 
-1. **市場摘要**（約 100-150 字）：
-   - 說明今日大盤表現及主要原因
-   - 點出受影響的重點產業或族群
-   - 提及明日或短期需要關注的方向
-   - 使用專業財經用語，繁體中文
+1. **市場摘要**（2-3句話）：
+   - 簡短說明今日市場整體狀況
+   - 繁體中文，口語化
 
-2. **市場情緒**：根據大盤漲跌幅度與新聞綜合判斷
+2. **深度分析**（200-300字）：
+   - 深入分析今日大盤走勢成因，引用具體數據
+   - 分析受影響的產業族群與個股動向
+   - 從總體經濟角度解讀（如Fed政策、匯率、資金流向、外資動態）
+   - 點出明日或本週需要關注的關鍵指標或事件
+   - 使用專業財經術語（如：多空分歧、量縮整理、法人籌碼、技術面支撐、資金輪動、超賣反彈、外資回補等）
+   - 繁體中文
+
+3. **市場情緒**：根據大盤漲跌幅度與新聞綜合判斷
    - positive（明顯偏多）、neutral（盤整觀望）、negative（明顯偏空）
    - 大盤跌超過 2% 應傾向 negative，漲超過 1% 應傾向 positive
 
-3. **情緒分數**：-100 到 +100 的整數
+4. **情緒分數**：-100 到 +100 的整數
    - 大盤漲跌是主要依據（跌 3% 約 -60 分，漲 1% 約 +30 分）
    - 新聞情緒作為微調（±20 分以內）
 
 請只回傳 JSON，格式：
-{{"summary": "...", "sentiment": "positive/neutral/negative", "score": 數字}}"""
+{{"summary": "...", "dailySummary": "...", "sentiment": "positive/neutral/negative", "score": 數字}}"""
 
         resp = client.messages.create(
             model="claude-sonnet-4-6",
-            max_tokens=800,
+            max_tokens=1200,
             messages=[{"role": "user", "content": prompt}]
         )
         text = resp.content[0].text.strip()
@@ -99,7 +105,7 @@ def _summarize_news_with_claude(articles: list, market: dict = None) -> dict:
         return json.loads(text)
     except Exception as e:
         log.warning(f"Claude 摘要失敗: {e}")
-        return {"summary": "今日新聞摘要暫時無法產生。", "sentiment": "neutral", "score": 0}
+        return {"summary": "今日新聞摘要暫時無法產生。", "dailySummary": "今日深度分析暫時無法產生。", "sentiment": "neutral", "score": 0}
 
 
 def _build_html(date_str: str, market: dict, news: list, ai_summary: dict) -> str:
@@ -213,6 +219,10 @@ def _build_html(date_str: str, market: dict, news: list, ai_summary: dict) -> st
     <h2>📰 今日財經新聞</h2>
     <ul>{news_items}</ul>
   </div>
+  <div class="card">
+    <h2>📋 今日市場深度分析</h2>
+    <div class="summary">{ai_summary.get('dailySummary','')}</div>
+  </div>
   <div class="footer">由 GitHub Actions 自動產生 · Stock Intelligence System</div>
 </div>
 </body>
@@ -309,7 +319,6 @@ def run():
     try:
         from src.exporters.json_exporter import export_dashboard
 
-        # 整理六大指數
         taiex = market["taiex"]
         indices_json = [
             {
@@ -329,13 +338,11 @@ def run():
                 "dir": "up" if (q['pct'] or 0) >= 0 else "down",
             })
 
-        # 整理新聞
         news_json = [
             {"title": n["title"], "summary": n.get("summary", ""), "source": n.get("source", ""), "url": n.get("url", "#")}
             for n in news[:8]
         ]
 
-        # 情緒標籤
         sent = ai_summary.get("sentiment", "neutral")
         score = ai_summary.get("score", 0)
         sent_label = {"positive": "偏多", "neutral": "中性", "negative": "偏空"}.get(sent, "中性")
@@ -348,7 +355,7 @@ def run():
             impacts=[],
             sentiment=sentiment_str,
             summary=ai_summary.get("summary", ""),
-            daily_summary=ai_summary.get("summary", ""),
+            daily_summary=ai_summary.get("dailySummary", ai_summary.get("summary", "")),
         )
         log.info("✅ dashboard.json 匯出成功")
     except Exception as e:
