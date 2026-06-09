@@ -380,6 +380,16 @@ def run():
     except Exception as e:
         log.error(f"❌ JSON 匯出失敗: {e}")
 
+    # ── 匯出 institution.json ──────────────────────────────
+    try:
+        from src.fetchers.institution_fetcher import fetch_institution_consensus
+        from src.exporters.json_exporter import export_institution
+        consensus = fetch_institution_consensus()
+        export_institution(buy=consensus["buy"], sell=consensus["sell"])
+        log.info("✅ institution.json 匯出成功")
+    except Exception as e:
+        log.error(f"❌ institution.json 匯出失敗: {e}")
+  
     log.info("=== 每日 Dashboard 完成 ===")
     return {"html": html, "text": text, "errors": errors}
 
