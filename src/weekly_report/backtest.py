@@ -121,7 +121,8 @@ def screen_stocks(
         hist   = price_histories.get(symbol)
 
         # ── 第三層：週期適配回測 ──────────────────────────
-        bt = rolling_backtest(hist, hold_days)
+        window_map = {"1m": 52, "3m": 104, "1y": 260}
+        bt = rolling_backtest(hist, hold_days, window_weeks=window_map[period])
 
         if bt is None:
             log.info(f"  {symbol} {name}: 歷史資料不足，跳過")
