@@ -165,7 +165,7 @@ def build_portfolio_data(holdings: list, news_articles: list = None) -> list:
     for h in holdings:
         code = h.get("code", "")
         cost = float(h.get("cost", 0))
-        shares = int(h.get("shares", 0))
+        shares = float(h.get("shares", 0))
 
         price_info = fetch_stock_price(code)
         price = price_info["price"]
@@ -183,7 +183,7 @@ def build_portfolio_data(holdings: list, news_articles: list = None) -> list:
             news_titles=news_titles,
         )
 
-        pnl = round((price - cost) * shares * 1000)
+        pnl = round((price - cost) * shares)
         pnl_pct = round((price - cost) / cost * 100, 1) if cost > 0 else 0
         price_dir = "up" if price >= cost else "down"
         pnl_str = f"+{pnl:,}" if pnl >= 0 else f"−{abs(pnl):,}"
@@ -197,7 +197,7 @@ def build_portfolio_data(holdings: list, news_articles: list = None) -> list:
         result.append({
             "name": h.get("name", ""),
             "code": code,
-            "shares": f"{shares}張",
+            "shares": f"{shares}股",
             "cost": cost,
             "price": price,
             "pnl": pnl_str,

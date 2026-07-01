@@ -21,6 +21,7 @@ from src.weekly_report.backtest    import screen_stocks, format_backtest_reasons
 from src.notifiers.email_notifier  import send_email
 from src.fetchers.finmind          import fetch_industry_institutional
 from src.scorers.fundamentals      import calc_fundamental_scores
+from src.scorers.liquidity         import calc_liquidity_scores
 log = logging.getLogger(__name__)
 CONFIG_DIR = Path(__file__).parent.parent.parent / "config"
 
@@ -57,6 +58,7 @@ def score_industries(
     news_articles,
     industry_institutional,
     industry_revenues,
+    all_stock_ids,
     period, weights,
 ):
     log.info("計算五維度產業評分...")
@@ -66,10 +68,11 @@ def score_industries(
     us_scores   = calc_us_correlation_scores(correlation_quotes, sp500_pct)
     cap_scores  = calc_capital_flow_scores(industry_institutional)
     fund_scores = calc_fundamental_scores(industry_revenues)
+    liq_scores  = calc_liquidity_scores(all_stock_ids)
 
     w = weights[period]
     all_codes = (set(rs_scores) | set(sent_scores) | set(us_scores)
-                 | set(cap_scores) | set(fund_scores))
+                 | set(cap_scores) | set(fund_scores) | set(liq_scores))
 
     results = []
     for code in all_codes:
@@ -78,13 +81,15 @@ def score_industries(
         us   = us_scores.get(code,   50.0)
         cap  = cap_scores.get(code,  50.0)
         fund = fund_scores.get(code, 50.0)
+        liq  = liq_scores.get(code,  50.0)
 
         total = (
             cap  * w["capital_flow"]      +
             sent * w["news_sentiment"]     +
             rs   * w["relative_strength"] +
             us   * w["us_correlation"]    +
-            fund * w["fundamentals"]
+            fund * w["fundamentals"]      +
+            liq  * w["liquidity"]
         )
         results.append({
             "code": code, "score": round(total, 1),
@@ -94,6 +99,7 @@ def score_industries(
                 "relative_strength": rs,
                 "us_correlation":    us,
                 "fundamentals":      fund,
+                "liquidity":         liq,
             }
         })
 
@@ -118,6 +124,7 @@ def build_html_report(period: str, ranked: list, stock_results: dict, ind_names:
           <td>{bd['relative_strength']:.0f}</td>
           <td>{bd['us_correlation']:.0f}</td>
           <td>{bd['fundamentals']:.0f}</td>
+          <td>{bd['liquidity']:.0f}</td>
         </tr>"""
 
     stock_sections = ""
@@ -197,7 +204,7 @@ def build_html_report(period: str, ranked: list, stock_results: dict, ind_names:
     <table border="1" cellpadding="6" cellspacing="0" style="border-collapse:collapse;width:100%">
       <tr style="background:#f0f0f0">
         <th>排名</th><th>產業</th><th>綜合分</th>
-        <th>資金</th><th>情緒</th><th>強度</th><th>連動</th><th>基本面</th>
+        <th>資金</th><th>情緒</th><th>強度</th><th>連動</th><th>基本面</th><th>流動性</th>
       </tr>
       {rows}
     </table>
@@ -268,6 +275,7 @@ def run(period: str = "3m"):
         news_articles,
         industry_institutional,
         industry_revenues,
+        all_stock_ids,
         period, weights,
     )
     top_industries = ranked[:top_n]
@@ -428,6 +436,7 @@ def run(period: str = "3m"):
                         "rs":        round(bd["relative_strength"]),
                         "us":        round(bd["us_correlation"]),
                         "fund":      round(bd["fundamentals"]),
+                        "liquidity": round(bd["liquidity"]),
                     },
                     "stocks": stocks_out,
                 })

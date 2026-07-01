@@ -8,30 +8,34 @@
     "top_stocks_per_industry": 2,
     "weights": {
       "1m": {
-        "capital_flow": 0.35,
+        "capital_flow": 0.25,
         "news_sentiment": 0.30,
         "relative_strength": 0.20,
         "us_correlation": 0.15,
-        "fundamentals": 0.00
+        "fundamentals": 0.00,
+        "liquidity": 0.10
       },
       "3m": {
         "capital_flow": 0.20,
-        "news_sentiment": 0.15,
+        "news_sentiment": 0.10,
         "relative_strength": 0.30,
         "us_correlation": 0.20,
-        "fundamentals": 0.15
+        "fundamentals": 0.10,
+        "liquidity": 0.10
       },
       "1y": {
         "capital_flow": 0.10,
-        "news_sentiment": 0.05,
+        "news_sentiment": 0.00,
         "relative_strength": 0.20,
         "us_correlation": 0.15,
-        "fundamentals": 0.50
+        "fundamentals": 0.50,
+        "liquidity": 0.05
       }
     }
   },
   "stock_filter": {
     "min_daily_volume_twd": 30000000,
+    "min_daily_volume_lots": 100,
     "min_market_cap_by_period": {
       "1m": 3000000000,
       "3m": 5000000000,
